@@ -1,15 +1,11 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
-const MEMBERS = ['JD', 'AM', 'SK', 'EL', 'OW'];
-
 export default function TaskCard({
   task,
-  onAssignMember,
   canMoveLeft = false,
   canMoveRight = false,
 }) {
-  const [showDropdown, setShowDropdown] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Destructure task properties with fallbacks
@@ -25,11 +21,6 @@ export default function TaskCard({
   
   const tagClass = `tag-${tag.toLowerCase()}`;
   const isDone = column === 'Done';
-
-  const toggleDropdown = (e) => {
-    e.stopPropagation();
-    setShowDropdown((prev) => !prev);
-  };
 
   const handleCardClick = () => {
     setIsModalOpen(true);
@@ -55,9 +46,7 @@ export default function TaskCard({
             {isDone ? (
               <div 
                 className="avatar-checkmark" 
-                title="Task Completed (Click to change member)" 
-                onClick={toggleDropdown}
-                style={{ cursor: 'pointer' }}
+                title="Task Completed"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="20 6 9 17 4 12"></polyline>
@@ -66,53 +55,10 @@ export default function TaskCard({
             ) : (
               <div 
                 className="avatar-circle" 
-                title={`Assigned to ${assignedTo} (Click to change)`}
-                onClick={toggleDropdown}
-                style={{ cursor: 'pointer' }}
+                title={`Assigned to ${assignedTo}`}
               >
                 {assignedTo}
               </div>
-            )}
-
-            {showDropdown && onAssignMember && (
-              <>
-                <div 
-                  style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    zIndex: 90,
-                    cursor: 'default'
-                  }} 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowDropdown(false);
-                  }} 
-                />
-                <div 
-                  className="member-dropdown" 
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {MEMBERS.map((m) => (
-                    <button
-                      key={m}
-                      className={`member-dropdown-item ${m === assignedTo ? 'active' : ''}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onAssignMember(id, m);
-                        setShowDropdown(false);
-                      }}
-                    >
-                      <div className="avatar-circle" style={{ width: '18px', height: '18px', fontSize: '8px' }}>
-                        {m}
-                      </div>
-                      <span>{m}</span>
-                    </button>
-                  ))}
-                </div>
-              </>
             )}
           </div>
 
@@ -227,7 +173,7 @@ TaskCard.propTypes = {
     dueDate: PropTypes.string,
     column: PropTypes.string,
   }).isRequired,
-  onAssignMember: PropTypes.func,
   canMoveLeft: PropTypes.bool,
   canMoveRight: PropTypes.bool,
 };
+
