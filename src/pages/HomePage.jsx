@@ -3,54 +3,7 @@ import Column from '../components/Column';
 import TaskCard from '../components/TaskCard';
 import SkeletonCard from '../components/SkeletonCard';
 import CreateTaskModal from '../components/CreateTaskModal';
-
-const INITIAL_TASKS = [
-  {
-    id: 1,
-    title: 'Design high-fidelity landing page mockup',
-    description: 'Create a responsive, high-fidelity Figma mockup for the main landing page incorporating the new brand guidelines.',
-    dueDate: 'Oct 12',
-    tag: 'Design',
-    assignedTo: 'JD',
-    column: 'To do',
-  },
-  {
-    id: 2,
-    title: 'Implement OAuth2 authentication middleware',
-    description: 'Set up Google and GitHub OAuth providers in the backend API and connect the frontend login flow.',
-    dueDate: 'Oct 14',
-    tag: 'Security',
-    assignedTo: 'AM',
-    column: 'Doing',
-  },
-  {
-    id: 3,
-    title: 'Profile & fix memory leak in WebSocket connection layer',
-    description: 'Investigate the memory spike observed during high concurrent WebSocket connections. Trace allocations and apply fix.',
-    dueDate: 'Oct 15',
-    tag: 'Bugfix',
-    assignedTo: 'SK',
-    column: 'Doing',
-  },
-  {
-    id: 4,
-    title: 'Set up automated CI/CD pipeline on Github Actions',
-    description: 'Configure standard linting, testing, and deployment stages for the main repository using Github Actions.',
-    dueDate: 'Oct 10',
-    tag: 'DevOps',
-    assignedTo: 'JD',
-    column: 'Done',
-  },
-  {
-    id: 5,
-    title: 'Write comprehensive integration tests for payments controller',
-    description: 'Increase test coverage on the payments controller. Mock Stripe API responses and handle webhook edge cases.',
-    dueDate: 'Oct 20',
-    tag: 'Testing',
-    assignedTo: 'EL',
-    column: 'To do',
-  },
-];
+import { INITIAL_TASKS } from '../data/mockTasks';
 
 const COLUMNS = ['To do', 'Doing', 'Done'];
 
@@ -93,7 +46,19 @@ export default function HomePage({ onLogout }) {
   const updateTaskMember = (taskId, newMember) => {
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
-        task.id === taskId ? { ...task, assignedTo: newMember } : task
+        String(task.id) === String(taskId)
+          ? { ...task, assignedTo: newMember }
+          : task
+      )
+    );
+  };
+
+  const updateTaskStatus = (taskId, newStatus) => {
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        String(task.id) === String(taskId)
+          ? { ...task, status: newStatus, column: newStatus }
+          : task
       )
     );
   };
@@ -194,6 +159,7 @@ export default function HomePage({ onLogout }) {
                 tasks={columnTasks}
                 loading={loading}
                 onAssignMember={updateTaskMember}
+                onUpdateStatus={updateTaskStatus}
                 columns={COLUMNS}
               />
             );
