@@ -235,6 +235,37 @@ body {
   letter-spacing: -0.3px;
 }
 
+.navbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 24px;
+}
+
+.nav-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-family: var(--font-family);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-card);
+}
+
+.nav-link-active {
+  color: var(--text-primary);
+  background-color: var(--bg-card-hover);
+}
+
 .navbar-actions {
   display: flex;
   align-items: center;

@@ -7,6 +7,7 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem('isLoggedIn') === 'true';
   });
+  const [activePage, setActivePage] = useState('board');
 
   const handleLoginSuccess = () => {
     localStorage.setItem('isLoggedIn', 'true');
@@ -21,7 +22,11 @@ export default function App() {
   return (
     <div className="app-container">
       {isLoggedIn ? (
-        <HomePage onLogout={handleLogout} />
+        <HomePage 
+        onLogout={handleLogout}
+        activePage={activePage}
+        onNavigate={setActivePage} 
+        />
       ) : (
         <LoginPage onLoginSuccess={handleLoginSuccess} />
       )}
