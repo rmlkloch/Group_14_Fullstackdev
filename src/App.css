@@ -758,3 +758,31 @@ body {
   background-color: rgba(99, 102, 241, 0.05);
 }
 
+/* Welcome Section Styles */
+.welcome-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 120px);
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.welcome-title-only {
+  font-size: 52px;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  background: linear-gradient(135deg, #FFFFFF 30%, #A5B4FC 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (max-width: 768px) {
+  .welcome-title-only {
+    font-size: 36px;
+  }
+}
+
+
