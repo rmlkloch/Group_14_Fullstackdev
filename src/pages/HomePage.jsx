@@ -1,7 +1,108 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Column from '../components/Column';
+import TaskCard from '../components/TaskCard';
+import SkeletonCard from '../components/SkeletonCard';
+import CreateTaskModal from '../components/CreateTaskModal';
+
+const INITIAL_TASKS = [
+  {
+    id: 1,
+    title: 'Design high-fidelity landing page mockup',
+    description: 'Create a responsive, high-fidelity Figma mockup for the main landing page incorporating the new brand guidelines.',
+    dueDate: 'Oct 12',
+    tag: 'Design',
+    assignedTo: 'JD',
+    column: 'To do',
+  },
+  {
+    id: 2,
+    title: 'Implement OAuth2 authentication middleware',
+    description: 'Set up Google and GitHub OAuth providers in the backend API and connect the frontend login flow.',
+    dueDate: 'Oct 14',
+    tag: 'Security',
+    assignedTo: 'AM',
+    column: 'Doing',
+  },
+  {
+    id: 3,
+    title: 'Profile & fix memory leak in WebSocket connection layer',
+    description: 'Investigate the memory spike observed during high concurrent WebSocket connections. Trace allocations and apply fix.',
+    dueDate: 'Oct 15',
+    tag: 'Bugfix',
+    assignedTo: 'SK',
+    column: 'Doing',
+  },
+  {
+    id: 4,
+    title: 'Set up automated CI/CD pipeline on Github Actions',
+    description: 'Configure standard linting, testing, and deployment stages for the main repository using Github Actions.',
+    dueDate: 'Oct 10',
+    tag: 'DevOps',
+    assignedTo: 'JD',
+    column: 'Done',
+  },
+  {
+    id: 5,
+    title: 'Write comprehensive integration tests for payments controller',
+    description: 'Increase test coverage on the payments controller. Mock Stripe API responses and handle webhook edge cases.',
+    dueDate: 'Oct 20',
+    tag: 'Testing',
+    assignedTo: 'EL',
+    column: 'To do',
+  },
+];
+
+const COLUMNS = ['To do', 'Doing', 'Done'];
 
 export default function HomePage({ onLogout }) {
+  const [tasks, setTasks] = useState(INITIAL_TASKS);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const categories = Array.from(
+    new Set([
+      'Design', 'Testing', 'Security', 'DevOps', 'Bugfix',
+      ...tasks.map(t => t.tag || t.category || t.categoryTag).filter(Boolean)
+    ])
+  );
+
+  const members = Array.from(
+    new Set([
+      'JD', 'AM', 'SK', 'EL', 'OW',
+      ...tasks.map(t => t.assignedTo || t.member || t.assignedMember).filter(Boolean)
+    ])
+  );
+
+  const handleAddTask = (newTask) => {
+    const taskWithId = { ...newTask, id: Date.now() };
+    setTasks((prev) => [...prev, taskWithId]);
+    setIsCreateModalOpen(false);
+  };
+
+  // Simulate loading screen
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+
+  // Handle updating task's assigned member
+  const updateTaskMember = (taskId, newMember) => {
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === taskId ? { ...task, assignedTo: newMember } : task
+      )
+    );
+  };
+
+  // Filter tasks by search query
+  const filteredTasks = tasks.filter((task) =>
+    task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    task.tag.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="board-container">
@@ -55,8 +156,49 @@ export default function HomePage({ onLogout }) {
         </div>
       </header>
 
-      {/* Main Content Area - Blank */}
+      {/* Main Kanban Content Area */}
       <main className="board-main">
+        <div className="board-header">
+          <h2 className="board-heading">Team board</h2>
+          <button 
+            className="submit-button" 
+            onClick={() => setIsCreateModalOpen(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add Task
+          </button>
+        </div>
+
+        {isCreateModalOpen && (
+          <CreateTaskModal 
+            categories={categories}
+            members={members}
+            onClose={() => setIsCreateModalOpen(false)} 
+            onAddTask={handleAddTask} 
+          />
+        )}
+
+        <div className="board-columns">
+          {COLUMNS.map((columnName) => {
+            const columnTasks = filteredTasks.filter((task) => task.column === columnName);
+
+            return (
+              <Column
+                key={columnName}
+                title={columnName}
+                count={columnTasks.length}
+                tasks={columnTasks}
+                loading={loading}
+                onAssignMember={updateTaskMember}
+                columns={COLUMNS}
+              />
+            );
+          })}
+        </div>
       </main>
 
       {/* Footer bar */}

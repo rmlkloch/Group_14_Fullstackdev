@@ -1,6 +1,17 @@
 import React from 'react';
+import PropTypes from 'prop-types';
+import TaskCard from './TaskCard';
+import SkeletonCard from './SkeletonCard';
 
-export default function Column({ title, count = 0, children }) {
+export default function Column({ 
+  title, 
+  count = 0, 
+  tasks = [], 
+  loading = false,
+  onAssignMember, 
+  columns = ['To do', 'Doing', 'Done'],
+  children 
+}) {
   return (
     <div className="column-wrapper">
       <div className="column-header">
@@ -18,8 +29,46 @@ export default function Column({ title, count = 0, children }) {
       </div>
 
       <div className="column-cards-container" style={{ marginBottom: '0px' }}>
-        {children}
+        {loading ? (
+          <>
+            {/* Fallback to children for loaders if they exist, or use built-in skeletons */}
+            {children || (
+              <>
+                <SkeletonCard />
+                <SkeletonCard />
+              </>
+            )}
+          </>
+        ) : tasks && tasks.length > 0 ? (
+          tasks.map((task) => {
+            const colIndex = columns.indexOf(task.column);
+            const canMoveLeft = colIndex > 0;
+            const canMoveRight = colIndex < columns.length - 1;
+
+            return (
+              <TaskCard
+                key={task.id}
+                task={task}
+                onAssignMember={onAssignMember}
+                canMoveLeft={canMoveLeft}
+                canMoveRight={canMoveRight}
+              />
+            );
+          })
+        ) : (
+          children
+        )}
       </div>
     </div>
   );
 }
+
+Column.propTypes = {
+  title: PropTypes.string.isRequired,
+  count: PropTypes.number,
+  tasks: PropTypes.array,
+  loading: PropTypes.bool,
+  onAssignMember: PropTypes.func,
+  columns: PropTypes.arrayOf(PropTypes.string),
+  children: PropTypes.node,
+};
