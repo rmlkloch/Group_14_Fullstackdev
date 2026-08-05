@@ -1,100 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import Column from '../components/Column';
-import TaskCard from '../components/TaskCard';
-import SkeletonCard from '../components/SkeletonCard';
-
-const INITIAL_TASKS = [
-  {
-    id: 1,
-    title: 'Design high-fidelity landing page mockup',
-    tag: 'Design',
-    tagColor: 'pink',
-    member: 'JD',
-    column: 'To do',
-  },
-  {
-    id: 2,
-    title: 'Implement OAuth2 authentication middleware',
-    tag: 'Security',
-    tagColor: 'purple',
-    member: 'AM',
-    column: 'Doing',
-  },
-  {
-    id: 3,
-    title: 'Profile & fix memory leak in WebSocket connection layer',
-    tag: 'Bugfix',
-    tagColor: 'orange',
-    member: 'SK',
-    column: 'Doing',
-  },
-  {
-    id: 4,
-    title: 'Set up automated CI/CD pipeline on Github Actions',
-    tag: 'DevOps',
-    tagColor: 'green',
-    member: 'JD',
-    column: 'Done',
-  },
-  {
-    id: 5,
-    title: 'Write comprehensive integration tests for payments controller',
-    tag: 'Testing',
-    tagColor: 'blue',
-    member: 'EL',
-    column: 'To do',
-  },
-];
-
-const COLUMNS = ['To do', 'Doing', 'Done'];
+import React, { useState } from 'react';
 
 export default function HomePage({ onLogout }) {
-  const [tasks, setTasks] = useState(INITIAL_TASKS);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Simulate loading screen
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Handle task movements between columns
-  const moveTask = (taskId, direction) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) => {
-        if (task.id !== taskId) return task;
-
-        const currentIndex = COLUMNS.indexOf(task.column);
-        let newIndex = currentIndex;
-
-        if (direction === 'left' && currentIndex > 0) {
-          newIndex = currentIndex - 1;
-        } else if (direction === 'right' && currentIndex < COLUMNS.length - 1) {
-          newIndex = currentIndex + 1;
-        }
-
-        return { ...task, column: COLUMNS[newIndex] };
-      })
-    );
-  };
-
-  // Handle updating task's assigned member
-  const updateTaskMember = (taskId, newMember) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId ? { ...task, member: newMember } : task
-      )
-    );
-  };
-
-  // Filter tasks by search query
-  const filteredTasks = tasks.filter((task) =>
-    task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    task.tag.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   return (
     <div className="board-container">
@@ -148,53 +55,8 @@ export default function HomePage({ onLogout }) {
         </div>
       </header>
 
-      {/* Main Kanban Content Area */}
+      {/* Main Content Area - Blank */}
       <main className="board-main">
-        <div className="board-header">
-          <h2 className="board-heading">Team board</h2>
-        </div>
-
-        <div className="board-columns">
-          {COLUMNS.map((columnName) => {
-            const columnTasks = filteredTasks.filter((task) => task.column === columnName);
-
-            return (
-              <Column
-                key={columnName}
-                title={columnName}
-                count={columnTasks.length}
-              >
-                {/* Render loaders or tasks */}
-                {loading ? (
-                  <>
-                    <SkeletonCard />
-                    <SkeletonCard />
-                  </>
-                ) : (
-                  columnTasks.map((task) => {
-                    const colIndex = COLUMNS.indexOf(task.column);
-                    return (
-                      <TaskCard
-                        key={task.id}
-                        title={task.title}
-                        tag={task.tag}
-                        tagColor={task.tagColor}
-                        member={task.member}
-                        isDone={task.column === 'Done'}
-                        showMove={true}
-                        onMoveLeft={() => moveTask(task.id, 'left')}
-                        onMoveRight={() => moveTask(task.id, 'right')}
-                        canMoveLeft={colIndex > 0}
-                        canMoveRight={colIndex < COLUMNS.length - 1}
-                        onUpdateMember={(newMember) => updateTaskMember(task.id, newMember)}
-                      />
-                    );
-                  })
-                )}
-              </Column>
-            );
-          })}
-        </div>
       </main>
 
       {/* Footer bar */}

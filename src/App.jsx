@@ -4,13 +4,17 @@ import HomePage from './pages/HomePage';
 import './App.css';
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem('isLoggedIn') === 'true';
+  });
 
   const handleLoginSuccess = () => {
+    localStorage.setItem('isLoggedIn', 'true');
     setIsLoggedIn(true);
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('isLoggedIn');
     setIsLoggedIn(false);
   };
 
