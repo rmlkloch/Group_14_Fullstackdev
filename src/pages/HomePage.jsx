@@ -3,11 +3,13 @@ import Column from '../components/Column';
 import TaskCard from '../components/TaskCard';
 import SkeletonCard from '../components/SkeletonCard';
 import CreateTaskModal from '../components/CreateTaskModal';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 import { INITIAL_TASKS } from '../data/mockTasks';
 
 const COLUMNS = ['To do', 'Doing', 'Done'];
 
-export default function HomePage({ onLogout }) {
+export default function HomePage({ onLogout, activePage, onNavigate }) {
   const [tasks, setTasks] = useState(INITIAL_TASKS);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,14 +73,13 @@ export default function HomePage({ onLogout }) {
 
   return (
     <div className="board-container">
-      {/* Top Navbar Header */}
-      <header className="navbar">
-        <div className="navbar-left">
-          <div className="navbar-logo">K</div>
-          <h1 className="navbar-title">Kanban Flow</h1>
-        </div>
+      <Header activePage={activePage} onNavigate={onNavigate} onLogout={onLogout} />
 
-        <div className="navbar-actions">
+      {/* Main Kanban Content Area */}
+      <main className="board-main">
+        <div className="board-header">
+          <h2 className="board-heading">Team board</h2>
+
           <div className="search-container">
             <svg
               className="search-icon"
@@ -103,28 +104,6 @@ export default function HomePage({ onLogout }) {
             />
           </div>
 
-          <button className="icon-btn" title="Notifications" aria-label="Notifications">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-            </svg>
-            <span className="badge-dot"></span>
-          </button>
-
-          <div className="user-profile" onClick={onLogout} title="Click to Sign Out">
-            <div className="profile-avatar">AM</div>
-            <div className="profile-info">
-              <span className="profile-name">Alex Mercer</span>
-              <button className="logout-btn">Sign Out</button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Kanban Content Area */}
-      <main className="board-main">
-        <div className="board-header">
-          <h2 className="board-heading">Team board</h2>
           <button 
             className="submit-button" 
             onClick={() => setIsCreateModalOpen(true)}
@@ -167,14 +146,7 @@ export default function HomePage({ onLogout }) {
         </div>
       </main>
 
-      {/* Footer bar */}
-      <footer className="footer">
-        <span>© 2026 Kanban Flow</span>
-        <div>
-          <a href="#" className="footer-link" style={{ marginRight: '16px' }}>Documentation</a>
-          <a href="#" className="footer-link">Support</a>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
