@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 import Column from '../components/Column';
 import TaskCard from '../components/TaskCard';
 import SkeletonCard from '../components/SkeletonCard';
