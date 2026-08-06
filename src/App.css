@@ -398,12 +398,14 @@ body {
   letter-spacing: -0.5px;
 }
 
+/* Locked Equal-Height Columns Grid */
 .board-columns {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
   flex: 1;
+  min-height: 0;
 }
 
 @media (max-width: 1024px) {
@@ -420,7 +422,9 @@ body {
   border-radius: 12px;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 240px);
+  height: calc(100vh - 220px);
+  max-height: 750px;
+  min-height: 500px;
   box-shadow: var(--shadow-sm);
   padding: 16px;
 }
@@ -474,15 +478,16 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  overflow: visible;
-  flex-grow: 1;
-  padding-right: 4px;
-  margin-bottom: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  padding-right: 6px;
+  margin-bottom: 0;
 }
 
 /* Custom Scrollbar for columns */
 .column-cards-container::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 .column-cards-container::-webkit-scrollbar-track {
@@ -768,7 +773,6 @@ body {
   overflow-y: auto;
 }
 
-/* Minimalist Scrollbar for Member Dropdown */
 .member-dropdown::-webkit-scrollbar {
   width: 4px;
 }
@@ -785,7 +789,6 @@ body {
 .member-dropdown::-webkit-scrollbar-thumb:hover {
   background-color: #777;
 }
-
 
 .member-dropdown-item {
   background: none;
@@ -1014,4 +1017,170 @@ body {
 
 .submit-button:hover {
   transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   Side Panel & History Calendar Styles (Member 6 - Professional Compact Layout)
+   ========================================================================== */
+.side-panel {
+  width: 260px;
+  background-color: var(--bg-navbar);
+  border-right: 1px solid var(--border-primary);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+.side-panel.collapsed {
+  width: 68px;
+  padding: 16px 10px;
+  align-items: center;
+}
+
+.side-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.side-panel.collapsed .side-panel-header {
+  justify-content: center;
+}
+
+.side-panel-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.toggle-panel-btn {
+  background: var(--bg-column);
+  border: 1px solid var(--border-primary);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.toggle-panel-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-focus);
+}
+
+.side-panel-content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 16px;
+}
+
+.member-list-section {
+  width: 100%;
+}
+
+.member-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.member-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  background-color: var(--bg-column);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.side-panel.collapsed .member-item {
+  justify-content: center;
+  padding: 8px 0;
+  background-color: transparent;
+  border-color: transparent;
+}
+
+.side-panel.collapsed .member-item:hover {
+  background-color: var(--bg-card-hover);
+  border-radius: 50%;
+}
+
+.member-info-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.member-name-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.member-role-text {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.history-widget-section {
+  padding-top: 14px;
+  border-top: 1px solid var(--border-primary);
+  width: 100%;
+}
+
+.history-toggle-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.side-panel.collapsed .history-toggle-btn {
+  padding: 10px 0;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  margin: 0 auto;
+}
+
+.history-toggle-btn:hover {
+  background-color: var(--bg-card-hover);
+  border-color: var(--accent);
+}
+
+.calendar-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.history-banner {
+  background-color: var(--bg-column);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  animation: fadeIn 0.3s ease;
 }

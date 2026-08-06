@@ -5,6 +5,9 @@ export default function TaskCard({
   task,
   canMoveLeft = false,
   canMoveRight = false,
+  onMoveLeft,
+  onMoveRight,
+  onDelete,
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -68,7 +71,7 @@ export default function TaskCard({
               style={{ color: 'var(--text-secondary)' }}
               onClick={(e) => {
                 e.stopPropagation();
-                /* TODO (Member 4): Attach task delete handler here */
+                if (onDelete) onDelete(id);
               }}
               title="Delete task"
               aria-label="Delete task"
@@ -81,12 +84,11 @@ export default function TaskCard({
             
             {(canMoveLeft || canMoveRight) && (
               <div className="task-nav-arrows">
-                {/* TODO (Member 4): Attach task movement / drag-and-drop handlers here. */}
                 <button
                   className="arrow-btn"
                   onClick={(e) => {
                     e.stopPropagation();
-                    // TODO (Member 4): Handle move left
+                    if (canMoveLeft && onMoveLeft) onMoveLeft(id);
                   }}
                   disabled={!canMoveLeft}
                   title="Move left"
@@ -100,7 +102,7 @@ export default function TaskCard({
                   className="arrow-btn"
                   onClick={(e) => {
                     e.stopPropagation();
-                    // TODO (Member 4): Handle move right
+                    if (canMoveRight && onMoveRight) onMoveRight(id);
                   }}
                   disabled={!canMoveRight}
                   title="Move right"
@@ -175,5 +177,7 @@ TaskCard.propTypes = {
   }).isRequired,
   canMoveLeft: PropTypes.bool,
   canMoveRight: PropTypes.bool,
+  onMoveLeft: PropTypes.func,
+  onMoveRight: PropTypes.func,
+  onDelete: PropTypes.func,
 };
-
