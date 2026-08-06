@@ -3,15 +3,33 @@ import Column from '../components/Column';
 import TaskCard from '../components/TaskCard';
 import SkeletonCard from '../components/SkeletonCard';
 import CreateTaskModal from '../components/CreateTaskModal';
+import SidePanel from '../components/SidePanel';
 import { INITIAL_TASKS } from '../data/mockTasks';
 
 const COLUMNS = ['To do', 'Doing', 'Done'];
+
+// Mock history logs linked to dates
+const MEMBER_HISTORY_LOGS = {
+  '2026-08-01': [
+    'JD created initial task wireframes.',
+    'AM set up basic app routing.'
+  ],
+  '2026-08-03': [
+    'SK resolved WebSocket connection edge cases.',
+    'EL added CI/CD GitHub Actions workflow.'
+  ],
+  '2026-08-05': [
+    'OW completed unit test suite for payment controller.',
+    'NJ added team side panel, member badges, and history calendar view.'
+  ]
+};
 
 export default function HomePage({ onLogout }) {
   const [tasks, setTasks] = useState(INITIAL_TASKS);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
 
   const categories = Array.from(
     new Set([
@@ -40,7 +58,6 @@ export default function HomePage({ onLogout }) {
     }, 1500);
     return () => clearTimeout(timer);
   }, []);
-
 
   // Handle updating task's assigned member
   const updateTaskMember = (taskId, newMember) => {
@@ -121,51 +138,90 @@ export default function HomePage({ onLogout }) {
         </div>
       </header>
 
-      {/* Main Kanban Content Area */}
-      <main className="board-main">
-        <div className="board-header">
-          <h2 className="board-heading">Team board</h2>
-          <button 
-            className="submit-button" 
-            onClick={() => setIsCreateModalOpen(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            Add Task
-          </button>
-        </div>
+      {/* Side-by-Side Flex Layout: SidePanel + Main Board */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {/* Member 6 Side Panel Component */}
+        <SidePanel
+          selectedDate={selectedDate}
+          onSelectDate={setSelectedDate}
+        />
 
-        {isCreateModalOpen && (
-          <CreateTaskModal 
-            categories={categories}
-            members={members}
-            onClose={() => setIsCreateModalOpen(false)} 
-            onAddTask={handleAddTask} 
-          />
-        )}
+        {/* Main Kanban Content Area */}
+        <main className="board-main" style={{ flex: 1, overflowY: 'auto' }}>
+          <div className="board-header">
+            <h2 className="board-heading">Team board</h2>
+            <button 
+              className="submit-button" 
+              onClick={() => setIsCreateModalOpen(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Add Task
+            </button>
+          </div>
 
-        <div className="board-columns">
-          {COLUMNS.map((columnName) => {
-            const columnTasks = filteredTasks.filter((task) => task.column === columnName);
+          {/* Member 6 Calendar History Banner */}
+          {selectedDate && (
+            <div className="history-banner">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-primary)' }}>
+                  Member Activity History for <span style={{ color: 'var(--tag-text-purple)' }}>{selectedDate}</span>
+                </h4>
+                <button
+                  onClick={() => setSelectedDate(null)}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '13px' }}
+                >
+                  ✕ Clear
+                </button>
+              </div>
+              <ul style={{ paddingLeft: '20px', margin: 0 }}>
+                {MEMBER_HISTORY_LOGS[selectedDate] ? (
+                  MEMBER_HISTORY_LOGS[selectedDate].map((log, index) => (
+                    <li key={index} style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                      {log}
+                    </li>
+                  ))
+                ) : (
+                  <li style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                    No recorded member history for this date.
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
 
-            return (
-              <Column
-                key={columnName}
-                title={columnName}
-                count={columnTasks.length}
-                tasks={columnTasks}
-                loading={loading}
-                onAssignMember={updateTaskMember}
-                onUpdateStatus={updateTaskStatus}
-                columns={COLUMNS}
-              />
-            );
-          })}
-        </div>
-      </main>
+          {isCreateModalOpen && (
+            <CreateTaskModal 
+              categories={categories}
+              members={members}
+              onClose={() => setIsCreateModalOpen(false)} 
+              onAddTask={handleAddTask} 
+            />
+          )}
+
+          <div className="board-columns">
+            {COLUMNS.map((columnName) => {
+              const columnTasks = filteredTasks.filter((task) => task.column === columnName);
+
+              return (
+                <Column
+                  key={columnName}
+                  title={columnName}
+                  count={columnTasks.length}
+                  tasks={columnTasks}
+                  loading={loading}
+                  onAssignMember={updateTaskMember}
+                  onUpdateStatus={updateTaskStatus}
+                  columns={COLUMNS}
+                />
+              );
+            })}
+          </div>
+        </main>
+      </div>
 
       {/* Footer bar */}
       <footer className="footer">
