@@ -9,9 +9,17 @@ export default function Column({
   tasks = [], 
   loading = false,
   onAssignMember, 
+  onUpdateStatus,
+  onMoveTask,
+  onStatusChange,
+  onDeleteTask,
+  onDelete,
   columns = ['To do', 'Doing', 'Done'],
   children 
 }) {
+  const handleUpdateStatus = onUpdateStatus || onMoveTask || onStatusChange;
+  const handleDelete = onDeleteTask || onDelete;
+
   return (
     <div className="column-wrapper">
       <div className="column-header">
@@ -31,7 +39,6 @@ export default function Column({
       <div className="column-cards-container" style={{ marginBottom: '0px' }}>
         {loading ? (
           <>
-            {/* Fallback to children for loaders if they exist, or use built-in skeletons */}
             {children || (
               <>
                 <SkeletonCard />
@@ -41,9 +48,22 @@ export default function Column({
           </>
         ) : tasks && tasks.length > 0 ? (
           tasks.map((task) => {
-            const colIndex = columns.indexOf(task.column);
+            const currentCol = task.column || task.status;
+            const colIndex = columns.indexOf(currentCol);
             const canMoveLeft = colIndex > 0;
             const canMoveRight = colIndex < columns.length - 1;
+
+            const handleMoveLeft = (taskId) => {
+              if (canMoveLeft && handleUpdateStatus) {
+                handleUpdateStatus(taskId, columns[colIndex - 1]);
+              }
+            };
+
+            const handleMoveRight = (taskId) => {
+              if (canMoveRight && handleUpdateStatus) {
+                handleUpdateStatus(taskId, columns[colIndex + 1]);
+              }
+            };
 
             return (
               <TaskCard
@@ -52,6 +72,9 @@ export default function Column({
                 onAssignMember={onAssignMember}
                 canMoveLeft={canMoveLeft}
                 canMoveRight={canMoveRight}
+                onMoveLeft={handleMoveLeft}
+                onMoveRight={handleMoveRight}
+                onDelete={handleDelete}
               />
             );
           })
@@ -69,6 +92,11 @@ Column.propTypes = {
   tasks: PropTypes.array,
   loading: PropTypes.bool,
   onAssignMember: PropTypes.func,
+  onUpdateStatus: PropTypes.func,
+  onMoveTask: PropTypes.func,
+  onStatusChange: PropTypes.func,
+  onDeleteTask: PropTypes.func,
+  onDelete: PropTypes.func,
   columns: PropTypes.arrayOf(PropTypes.string),
   children: PropTypes.node,
 };
