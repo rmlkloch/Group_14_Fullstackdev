@@ -53,6 +53,12 @@ export default function HomePage({ onLogout }) {
     setIsCreateModalOpen(false);
   };
 
+  const handleDeleteTask = (taskId) => {
+    setTasks((prevTasks) =>
+      prevTasks.filter((task) => String(task.id) !== String(taskId))
+    );
+  };
+
   // Simulate loading screen
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -66,7 +72,7 @@ export default function HomePage({ onLogout }) {
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
         String(task.id) === String(taskId)
-          ? { ...task, assignedTo: newMember }
+          ? { ...task, assignedTo: newMember, member: newMember }
           : task
       )
     );
@@ -84,8 +90,8 @@ export default function HomePage({ onLogout }) {
 
   // Filter tasks by search query
   const filteredTasks = tasks.filter((task) =>
-    task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    task.tag.toLowerCase().includes(searchQuery.toLowerCase())
+    (task.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (task.tag || task.category || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -206,7 +212,9 @@ export default function HomePage({ onLogout }) {
 
           <div className="board-columns">
             {COLUMNS.map((columnName) => {
-              const columnTasks = filteredTasks.filter((task) => task.column === columnName);
+              const columnTasks = filteredTasks.filter(
+                (task) => (task.column || task.status) === columnName
+              );
 
               return (
                 <Column
@@ -216,7 +224,14 @@ export default function HomePage({ onLogout }) {
                   tasks={columnTasks}
                   loading={loading}
                   onAssignMember={updateTaskMember}
+                  onMemberChange={updateTaskMember}
                   onUpdateStatus={updateTaskStatus}
+                  onMoveTask={updateTaskStatus}
+                  onStatusChange={updateTaskStatus}
+                  onMove={updateTaskStatus}
+                  onDeleteTask={handleDeleteTask}
+                  onDelete={handleDeleteTask}
+                  onDeleteCard={handleDeleteTask}
                   columns={COLUMNS}
                 />
               );
