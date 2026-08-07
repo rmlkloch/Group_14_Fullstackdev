@@ -10,6 +10,7 @@ export default function TaskCard({
   onDelete,
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Destructure task properties with fallbacks
   const { 
@@ -34,9 +35,25 @@ export default function TaskCard({
     setIsModalOpen(false);
   };
 
+  const handleDragStart = (e) => {
+    setIsDragging(true);
+    e.dataTransfer.setData('text/plain', String(id));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
   return (
     <>
-      <div className="task-card" onClick={handleCardClick}>
+      <div 
+        className={`task-card ${isDragging ? 'dragging' : ''}`} 
+        onClick={handleCardClick}
+        draggable={true}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
         <div className="task-card-header">
           <span className={`tag-badge ${tagClass}`}>{tag}</span>
           {dueDate && <span className="due-date-badge">{dueDate}</span>}

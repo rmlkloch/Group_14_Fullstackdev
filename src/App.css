@@ -1184,3 +1184,50 @@ body {
   margin-bottom: 20px;
   animation: fadeIn 0.3s ease;
 }
+
+/* Drag and Drop Interaction Styles */
+.task-card.dragging {
+  opacity: 0.4;
+  transform: scale(0.98);
+  border: 1px dashed var(--accent);
+  box-shadow: none;
+  cursor: grabbing;
+}
+
+.column-wrapper.drag-over {
+  border-color: var(--accent);
+  background-color: rgba(99, 102, 241, 0.04);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25), var(--shadow-md);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.task-card-placeholder {
+  border: 2px dashed var(--accent);
+  background-color: rgba(99, 102, 241, 0.05);
+  border-radius: 10px;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  gap: 8px;
+  transition: all 0.2s ease;
+  animation: pulse-border 2s infinite ease-in-out;
+}
+
+@keyframes pulse-border {
+  0% {
+    border-color: rgba(99, 102, 241, 0.4);
+    background-color: rgba(99, 102, 241, 0.02);
+  }
+  50% {
+    border-color: rgba(99, 102, 241, 1);
+    background-color: rgba(99, 102, 241, 0.08);
+  }
+  100% {
+    border-color: rgba(99, 102, 241, 0.4);
+    background-color: rgba(99, 102, 241, 0.02);
+  }
+}
