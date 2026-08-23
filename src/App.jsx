@@ -1,35 +1,31 @@
 import React, { useState } from 'react';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
-import './App.css';
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return localStorage.getItem('isLoggedIn') === 'true';
-  });
-  const [activePage, setActivePage] = useState('board');
-
-  const handleLoginSuccess = () => {
-    localStorage.setItem('isLoggedIn', 'true');
-    setIsLoggedIn(true);
-  };
+  const [user, setUser] = useState(null);
+  const [authView, setAuthView] = useState('login'); // 'login' or 'register'
 
   const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    setIsLoggedIn(false);
+    localStorage.removeItem('token');
+    setUser(null);
+    setAuthView('login');
   };
 
-  return (
-    <div className="app-container">
-      {isLoggedIn ? (
-        <HomePage 
-        onLogout={handleLogout}
-        activePage={activePage}
-        onNavigate={setActivePage} 
-        />
-      ) : (
-        <LoginPage onLoginSuccess={handleLoginSuccess} />
-      )}
-    </div>
+  if (user) {
+    return <HomePage onLogout={handleLogout} />;
+  }
+
+  return authView === 'login' ? (
+    <LoginPage
+      onLoginSuccess={(userData) => setUser(userData)}
+      onSwitchToRegister={() => setAuthView('register')}
+    />
+  ) : (
+    <RegisterPage
+      onRegisterSuccess={() => setAuthView('login')}
+      onSwitchToLogin={() => setAuthView('login')}
+    />
   );
 }

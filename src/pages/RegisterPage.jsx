@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 
-export default function LoginPage({ onLoginSuccess, onSwitchToRegister }) {
+export default function RegisterPage({ onRegisterSuccess, onSwitchToLogin }) {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -10,9 +12,9 @@ export default function LoginPage({ onLoginSuccess, onSwitchToRegister }) {
     e.preventDefault();
     setError('');
 
-    // Basic Form Validation
-    if (!email || !password) {
-      setError('Please fill in all fields.');
+    // Validation checks
+    if (!name || !email || !password || !confirmPassword) {
+      setError('Please fill in all required fields.');
       return;
     }
 
@@ -21,72 +23,78 @@ export default function LoginPage({ onLoginSuccess, onSwitchToRegister }) {
       return;
     }
 
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Connect to the POST /api/auth/login endpoint
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      // Connect to POST /api/auth/register endpoint
+      const response = await fetch('http://localhost:5000/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ name, email, password }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Invalid email or password.');
+        throw new Error(data.message || 'Registration failed.');
       }
 
-      // Save JWT token in localStorage and update auth state
-      localStorage.setItem('token', data.token);
-      onLoginSuccess(data.user || { email });
+      onRegisterSuccess();
     } catch (err) {
-      setError(err.message || 'Server error. Please try again later.');
+      setError(err.message || 'Something went wrong. Try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-container" style={styles.container}>
-      <div className="auth-card" style={styles.card}>
-        <h2 style={styles.title}>Sign In to Kanban Flow</h2>
-        <p style={styles.subtitle}>Enter your credentials to access your board</p>
+    <div style={styles.container}>
+      <div style={styles.card}>
+        <h2 style={styles.title}>Create an Account</h2>
+        <p style={styles.subtitle}>Join Kanban Flow to manage your tasks</p>
 
         {error && <div style={styles.errorAlert}>{error}</div>}
 
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.inputGroup}>
+            <label style={styles.label}>Full Name</label>
+            <input type="text" placeholder="John Doe" value={name} onChange={(e) => setName(e.target.value)} style={styles.input} />
+          </div>
+
+          <div style={styles.inputGroup}>
             <label style={styles.label}>Email Address</label>
-            <input
-              type="email"
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={styles.input}
-            />
+            <input type="email" placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)} style={styles.input} />
           </div>
 
           <div style={styles.inputGroup}>
             <label style={styles.label}>Password</label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={styles.input}
-            />
+            <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} style={styles.input} />
+          </div>
+
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Confirm Password</label>
+            <input type="password" placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} style={styles.input} />
           </div>
 
           <button type="submit" disabled={loading} style={styles.button}>
-            {loading ? 'Signing In...' : 'Sign In'}
+            {loading ? 'Creating Account...' : 'Register'}
           </button>
         </form>
 
         <p style={styles.footerText}>
-          Don't have an account?{' '}
-          <button onClick={onSwitchToRegister} style={styles.linkButton}>
-            Register here
+          Already have an account?{' '}
+          <button onClick={onSwitchToLogin} style={styles.linkButton}>
+            Sign In
           </button>
         </p>
       </div>
@@ -100,7 +108,7 @@ const styles = {
   title: { fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', textAlign: 'center' },
   subtitle: { fontSize: '14px', color: '#94a3b8', marginBottom: '24px', textAlign: 'center' },
   errorAlert: { backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '10px', borderRadius: '6px', fontSize: '14px', marginBottom: '16px' },
-  form: { display: 'flex', flexDirection: 'column', gap: '16px' },
+  form: { display: 'flex', flexDirection: 'column', gap: '14px' },
   inputGroup: { display: 'flex', flexDirection: 'column', gap: '6px' },
   label: { fontSize: '14px', color: '#cbd5e1' },
   input: { padding: '10px 14px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: '#fff', fontSize: '14px' },
