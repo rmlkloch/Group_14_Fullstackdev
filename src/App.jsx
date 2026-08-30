@@ -1,6 +1,7 @@
 // src/App.jsx
 import React, { useState } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import './App.css'; // <-- Restores your CSS styling
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
