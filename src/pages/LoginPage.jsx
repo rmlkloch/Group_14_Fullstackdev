@@ -1,12 +1,15 @@
+// src/pages/LoginPage.jsx
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import mockTokens from '../services/mockJwt';
 
-export default function LoginPage({ onSwitchToRegister }) {
+export default function LoginPage({ onLoginSuccess, onSwitchToRegister }) {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showTestPanel, setShowTestPanel] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,17 +35,41 @@ export default function LoginPage({ onSwitchToRegister }) {
         throw new Error(data.message || 'Invalid email or password.');
       }
 
-      // Update global AuthContext state
-      login(data.user || { email, name: email.split('@')[0] }, data.token);
+      // If using React Router (Member 6), onLoginSuccess is passed
+      if (onLoginSuccess) {
+        onLoginSuccess(data.token, data.user || { email, name: email.split('@')[0] });
+      } else {
+        // Fallback to direct context injection (Member 3)
+        login(data.token, data.user || { email, name: email.split('@')[0] });
+      }
     } catch (err) {
       if (err.name === 'TypeError' && err.message.includes('fetch')) {
         console.warn('Backend server offline. Using mock login.');
-        login({ email, name: email.split('@')[0] }, 'mock-jwt-token-member-3');
+        const mockToken = mockTokens.validMember();
+        const mockUser = { email, role: 'member', name: email.split('@')[0] };
+        
+        if (onLoginSuccess) {
+          onLoginSuccess(mockToken, mockUser);
+        } else {
+          login(mockToken, mockUser);
+        }
       } else {
         setError(err.message || 'Login failed.');
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Helper for mock auth testing toolbar
+  const handleTestTokenLogin = (tokenGenerator, role = 'member', name = 'Test User') => {
+    const jwt = tokenGenerator();
+    const mockUser = { email: `${role}@company.com`, role, name };
+    
+    if (onLoginSuccess) {
+      onLoginSuccess(jwt, mockUser);
+    } else {
+      login(jwt, mockUser);
     }
   };
 
@@ -88,6 +115,46 @@ export default function LoginPage({ onSwitchToRegister }) {
             Register here
           </button>
         </p>
+
+        {/* Mock Auth Testing Toolbar */}
+        <div style={{ marginTop: '20px', borderTop: '1px solid #334155', paddingTop: '12px', textAlign: 'center' }}>
+          <button 
+            type="button"
+            onClick={() => setShowTestPanel(!showTestPanel)}
+            style={{ background: 'none', border: 'none', color: '#818cf8', fontSize: '12px', cursor: 'pointer', textDecoration: 'underline' }}
+          >
+            {showTestPanel ? 'Hide Mock Testing Toolbar' : '🧪 Show Mock Testing Toolbar'}
+          </button>
+
+          {showTestPanel && (
+            <div style={{ marginTop: '10px', background: '#0f172a', padding: '12px', borderRadius: '8px', border: '1px solid #334155' }}>
+              <p style={{ fontSize: '11px', fontWeight: 'bold', color: '#94a3b8', marginBottom: '8px' }}>Test Auth Scenarios (No Backend):</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => handleTestTokenLogin(mockTokens.validMember, 'member', 'Member User')}
+                  style={{ padding: '6px 10px', fontSize: '11px', background: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  Valid Member JWT
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTestTokenLogin(mockTokens.validAdmin, 'admin', 'Admin User')}
+                  style={{ padding: '6px 10px', fontSize: '11px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  Valid Admin JWT
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTestTokenLogin(mockTokens.expired, 'member', 'Expired User')}
+                  style={{ padding: '6px 10px', fontSize: '11px', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  Test Expired JWT
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
