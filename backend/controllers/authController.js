@@ -52,8 +52,8 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Please provide email and password' });
     }
 
-    // Check for user email
-    const user = await User.findOne({ email });
+    // Check for user email (include password for matchPassword comparison since select: false in schema)
+    const user = await User.findOne({ email }).select('+password');
 
     // Verify password using instance method matchPassword
     if (user && (await user.matchPassword(password))) {
@@ -71,15 +71,18 @@ const loginUser = async (req, res) => {
   }
 };
 
-// @desc    Get user profile (Protected route test)
-// @route   GET /api/auth/profile
+// @desc    Get current user profile / auth user
+// @route   GET /api/auth/me & GET /api/auth/profile
 // @access  Private
 const getUserProfile = async (req, res) => {
   res.json(req.user);
 };
 
+const getMe = getUserProfile;
+
 module.exports = {
   registerUser,
   loginUser,
   getUserProfile,
+  getMe,
 };

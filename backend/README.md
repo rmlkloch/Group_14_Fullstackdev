@@ -23,6 +23,7 @@ Configure the following key-value pairs in `backend/.env`:
 | `PORT` | Port number for the Express server | `5000` |
 | `MONGO_URI` | MongoDB Atlas or local MongoDB connection string | `mongodb+srv://user:pass@cluster.mongodb.net/syncboard` |
 | `JWT_SECRET` | Secret key used to sign and verify JWT tokens | `your_jwt_secret_key_change_in_production` |
+| `JWT_EXPIRE` | Expiration time for generated JWT tokens | `30d` (or `7d`, `1d`, `1h`) |
 
 > [!NOTE]
 > **DNS SRV Resolution Fallback:** In `server.js`, a fallback using `dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1'])` is configured to handle `querySrv ECONNREFUSED` issues caused by restrictive local ISP DNS resolvers. Direct non-SRV replica set connection string templates are also provided in `.env`.
@@ -37,15 +38,16 @@ backend/
 ├── package.json                  # Module dependencies & scripts
 ├── README.md                     # Technical module documentation
 ├── models/
-│   └── User.js                   # Mongoose User Schema & password hashing pre-save hook
+│   └── User.js                   # Mongoose User Schema (select: false on password) & hashing hook
 ├── controllers/
-│   └── authController.js         # Controllers for register, login, & profile retrieval
+│   └── authController.js         # Controllers for register, login, & profile/me retrieval
 ├── middleware/
-│   └── authMiddleware.js         # JWT Authentication guard middleware (`protect`)
+│   ├── authMiddleware.js         # JWT Authentication guard middleware (`protect`) & expiry handler
+│   └── rateLimiter.js            # Login rate limiter middleware (`express-rate-limit`)
 ├── routes/
 │   └── authRoutes.js             # Express API routes (`/api/auth`)
 ├── utils/
-│   └── generateToken.js          # JWT signing utility (30-day expiration)
+│   └── generateToken.js          # JWT signing utility (configurable expiration via JWT_EXPIRE)
 └── server.js                     # Express server, DNS fallback & MongoDB connection
 ```
 
@@ -54,19 +56,23 @@ backend/
 ## 🔒 Security Architecture
 
 ### 1. User Model & Password Hashing (`models/User.js`)
-- **Schema Fields**: `name`, `email` (unique, lowercase, trimmed), `password` (min length: 6).
+- **Schema Fields**: `name`, `email` (unique, lowercase, trimmed), `password` (`select: false`, min length: 6).
+- **Defense in Depth**: Password field is set to `select: false` by default, ensuring password hashes are NEVER returned in any Mongoose query unless explicitly requested via `.select('+password')`.
 - **Pre-Save Hashing Hook**: Automatically salts (`saltRounds = 10`) and hashes passwords using `bcryptjs` before persisting to MongoDB.
 - **Password Comparison**: Instance method `user.matchPassword(enteredPassword)` compares plain text input against the stored hash securely via `bcrypt.compare`.
 
-### 2. Stateless Auth & JWT Issuance (`utils/generateToken.js` & `controllers/authController.js`)
-- Returns a signed JSON Web Token (JWT) containing the user's MongoDB `_id` upon registration or login (`expiresIn: '30d'`).
-- Plain text and hashed passwords are stripped from responses.
+### 2. Stateless Auth & JWT Expiry (`utils/generateToken.js` & `controllers/authController.js`)
+- Returns a signed JSON Web Token (JWT) containing the user's MongoDB `_id` upon registration or login (`expiresIn: process.env.JWT_EXPIRE || '30d'`).
+- Plain text and hashed passwords are stripped from all API response payloads.
 
-### 3. Middleware Guard (`middleware/authMiddleware.js`)
-- `protect` middleware extracts the `Bearer <token>` from the HTTP `Authorization` header.
-- Decodes and verifies the token signature using `JWT_SECRET`.
-- Fetches user records from MongoDB excluding the password field (`.select('-password')`) and attaches the object to `req.user`.
-- Protects unauthorized requests by returning **HTTP 401 Unauthorized**.
+### 3. Rate Limiting (`middleware/rateLimiter.js`)
+- `loginLimiter` protects `POST /api/auth/login` against brute force attacks by limiting requests per IP address (10 requests per 15-minute window).
+
+### 4. Middleware Guard & Bearer Token Validation (`middleware/authMiddleware.js`)
+- `protect` middleware strictly extracts `Bearer <token>` from the HTTP `Authorization` header.
+- Decodes and verifies token signature using `JWT_SECRET`.
+- Gracefully handles `TokenExpiredError` with an explicit 401 response (`"Not authorized, token expired"`).
+- Fetches user records from MongoDB excluding the password field and attaches the object to `req.user`.
 
 ---
 
@@ -95,9 +101,9 @@ backend/
 
 ---
 
-### 2. Login User
+### 2. Login User (Rate-Limited)
 - **Route**: `POST /api/auth/login`
-- **Access**: Public
+- **Access**: Public (Max 10 requests / 15 mins)
 - **Request Body**:
   ```json
   {
@@ -117,8 +123,8 @@ backend/
 
 ---
 
-### 3. Get User Profile (Protected)
-- **Route**: `GET /api/auth/profile`
+### 3. Get Current Auth User / Profile (Protected)
+- **Route**: `GET /api/auth/me` (Alias: `GET /api/auth/profile`)
 - **Access**: Private (Requires `Authorization: Bearer <token>`)
 - **Headers**:
   ```http
@@ -134,10 +140,10 @@ backend/
     "updatedAt": "2026-08-28T07:18:38.633Z"
   }
   ```
-- **Response (401 Unauthorized - Missing/Invalid Token)**:
+- **Response (401 Unauthorized - Token Expired)**:
   ```json
   {
-    "message": "Not authorized, no token"
+    "message": "Not authorized, token expired"
   }
   ```
 
@@ -145,11 +151,12 @@ backend/
 
 ## 🧪 Verification & Automated Testing
 
-All 4 authentication workflows were validated against the live running server:
-1. ✅ **User Registration** (`POST /api/auth/register`) returns `201 Created` with signed JWT.
-2. ✅ **User Login** (`POST /api/auth/login`) returns `200 OK` with verified credentials & signed JWT.
-3. ✅ **Unauthorized Guard** (`GET /api/auth/profile` without token) returns `401 Unauthorized`.
-4. ✅ **Authorized Retrieval** (`GET /api/auth/profile` with Bearer token) returns sanitized user profile without password exposure.
+All authentication workflows and gap fixes were validated:
+1. ✅ **`GET /api/auth/me`**: Returns 200 OK with sanitized user details when provided a valid Bearer token.
+2. ✅ **JWT Expiry Validation**: `TokenExpiredError` is caught cleanly and returns 401 `"Not authorized, token expired"`.
+3. ✅ **Password Hash Protection**: `password` is defined with `select: false`, preventing accidental hash exposure in queries.
+4. ✅ **Rate Limiting**: `POST /api/auth/login` uses `loginLimiter` to mitigate brute force attacks.
+5. ✅ **Explicit Bearer-token Parsing**: Handled securely via case-insensitive `Bearer ` prefix check.
 
 ---
 
