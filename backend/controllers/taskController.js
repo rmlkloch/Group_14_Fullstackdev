@@ -1,69 +1,68 @@
-let tasks = [];
-let currentId = 1;
+const taskService = require('../services/taskService');
 
 // Get all tasks
 exports.getTasks = (req, res) => {
-  res.status(200).json(tasks);
+  try {
+    const { status, assignee, sortBy, order, page, limit } = req.query;
+    const options = { status, assignee, sortBy, order, page, limit };
+    const result = taskService.getTasks(options);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 // Get task by ID
 exports.getTaskById = (req, res) => {
-  const task = tasks.find(t => t.id === parseInt(req.params.id, 10));
-  if (!task) {
-    return res.status(404).json({ message: 'Task not found' });
+  try {
+    const task = taskService.getTaskById(req.params.id);
+    res.status(200).json(task);
+  } catch (error) {
+    if (error.message === 'Task not found') {
+      return res.status(404).json({ message: error.message });
+    }
+    res.status(500).json({ message: error.message });
   }
-  res.status(200).json(task);
 };
 
 // Create a new task
 exports.createTask = (req, res) => {
-  const { title, ...otherData } = req.body;
-  
-  if (!title || typeof title !== 'string' || title.trim() === '') {
-    return res.status(400).json({ message: 'Task title is required' });
+  try {
+    const newTask = taskService.createTask(req.body);
+    res.status(201).json(newTask);
+  } catch (error) {
+    if (error.message === 'Task title is required') {
+      return res.status(400).json({ message: error.message });
+    }
+    res.status(500).json({ message: error.message });
   }
-
-  const newTask = {
-    id: currentId++,
-    title: title.trim(),
-    ...otherData,
-    createdAt: new Date().toISOString()
-  };
-  
-  tasks.push(newTask);
-  res.status(201).json(newTask);
 };
 
 // Update an existing task
 exports.updateTask = (req, res) => {
-  const { title, ...otherData } = req.body;
-
-  if (!title || typeof title !== 'string' || title.trim() === '') {
-    return res.status(400).json({ message: 'Task title is required' });
+  try {
+    const updatedTask = taskService.updateTask(req.params.id, req.body);
+    res.status(200).json(updatedTask);
+  } catch (error) {
+    if (error.message === 'Task not found') {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message === 'Task title cannot be empty') {
+      return res.status(400).json({ message: error.message });
+    }
+    res.status(500).json({ message: error.message });
   }
-
-  const taskIndex = tasks.findIndex(t => t.id === parseInt(req.params.id, 10));
-  if (taskIndex === -1) {
-    return res.status(404).json({ message: 'Task not found' });
-  }
-
-  tasks[taskIndex] = {
-    ...tasks[taskIndex],
-    ...otherData,
-    title: title.trim(),
-    updatedAt: new Date().toISOString()
-  };
-
-  res.status(200).json(tasks[taskIndex]);
 };
 
 // Delete a task
 exports.deleteTask = (req, res) => {
-  const taskIndex = tasks.findIndex(t => t.id === parseInt(req.params.id, 10));
-  if (taskIndex === -1) {
-    return res.status(404).json({ message: 'Task not found' });
+  try {
+    taskService.deleteTask(req.params.id);
+    res.status(200).json({ message: 'Task deleted successfully' });
+  } catch (error) {
+    if (error.message === 'Task not found') {
+      return res.status(404).json({ message: error.message });
+    }
+    res.status(500).json({ message: error.message });
   }
-
-  tasks.splice(taskIndex, 1);
-  res.status(200).json({ message: 'Task deleted successfully' });
 };
