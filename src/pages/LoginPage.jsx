@@ -1,117 +1,134 @@
+// src/pages/LoginPage.jsx
 import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import mockTokens from '../services/mockJwt';
 
-export default function LoginPage({ onLoginSuccess }) {
+export default function LoginPage({ onLoginSuccess, onSwitchToRegister }) {
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [showTestPanel, setShowTestPanel] = useState(false);
 
-  const validate = () => {
-    let isValid = true;
-    
-    if (!email) {
-      setEmailError('Email address is required');
-      isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      setEmailError('Please enter a valid email address');
-      isValid = false;
-    } else {
-      setEmailError('');
-    }
-
-    if (!password) {
-      setPasswordError('Password is required');
-      isValid = false;
-    } else if (password.length < 6) {
-      setPasswordError('Password must be at least 6 characters long');
-      isValid = false;
-    } else {
-      setPasswordError('');
-    }
-
-    return isValid;
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validate()) {
-      // Generate valid JWT token for standard login
-      const jwtToken = mockTokens.validMember();
-      const userData = { email, role: 'member', name: email.split('@')[0] };
-      onLoginSuccess(jwtToken, userData);
+    setError('');
+
+    if (!email || !password) {
+      setError('Please fill in all fields.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Invalid email or password.');
+      }
+
+      // If using React Router (Member 6), onLoginSuccess is passed
+      if (onLoginSuccess) {
+        onLoginSuccess(data.token, data.user || { email, name: email.split('@')[0] });
+      } else {
+        // Fallback to direct context injection (Member 3)
+        login(data.token, data.user || { email, name: email.split('@')[0] });
+      }
+    } catch (err) {
+      if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        console.warn('Backend server offline. Using mock login.');
+        const mockToken = mockTokens.validMember();
+        const mockUser = { email, role: 'member', name: email.split('@')[0] };
+        
+        if (onLoginSuccess) {
+          onLoginSuccess(mockToken, mockUser);
+        } else {
+          login(mockToken, mockUser);
+        }
+      } else {
+        setError(err.message || 'Login failed.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Helper for Member 6 auth testing
+  // Helper for mock auth testing toolbar
   const handleTestTokenLogin = (tokenGenerator, role = 'member', name = 'Test User') => {
     const jwt = tokenGenerator();
-    onLoginSuccess(jwt, { email: `${role}@company.com`, role, name });
+    const mockUser = { email: `${role}@company.com`, role, name };
+    
+    if (onLoginSuccess) {
+      onLoginSuccess(jwt, mockUser);
+    } else {
+      login(jwt, mockUser);
+    }
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <div className="login-header">
-          <div className="login-logo">K</div>
-          <h2 className="login-title">Welcome Back</h2>
-          <p className="login-subtitle">Sign in to manage your team tasks</p>
-        </div>
+    <div style={styles.container}>
+      <div style={styles.card}>
+        <h2 style={styles.title}>Sign In to Kanban Flow</h2>
+        <p style={styles.subtitle}>Enter your credentials to access your board</p>
 
-        <form onSubmit={handleSubmit} className="login-form">
-          <div className="form-group">
-            <label className="form-label" htmlFor="email-input">Email Address</label>
+        {error && <div style={styles.errorAlert}>{error}</div>}
+
+        <form onSubmit={handleSubmit} style={styles.form}>
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Email Address</label>
             <input
-              id="email-input"
               type="email"
-              className="form-input"
-              placeholder="name@company.com"
+              placeholder="name@example.com"
               value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (emailError) setEmailError('');
-              }}
-              autoComplete="email"
+              onChange={(e) => setEmail(e.target.value)}
+              style={styles.input}
             />
-            {emailError && <span className="error-message">{emailError}</span>}
           </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="password-input">Password</label>
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Password</label>
             <input
-              id="password-input"
               type="password"
-              className="form-input"
               placeholder="••••••••"
               value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                if (passwordError) setPasswordError('');
-              }}
-              autoComplete="current-password"
+              onChange={(e) => setPassword(e.target.value)}
+              style={styles.input}
             />
-            {passwordError && <span className="error-message">{passwordError}</span>}
           </div>
 
-          <button type="submit" className="login-button">
-            Sign In
+          <button type="submit" disabled={loading} style={styles.button}>
+            {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 
-        {/* Member 6 Auth Testing Toolbar */}
-        <div style={{ marginTop: '20px', borderTop: '1px solid #e2e8f0', paddingTop: '12px', textAlign: 'center' }}>
+        <p style={styles.footerText}>
+          Don't have an account?{' '}
+          <button onClick={onSwitchToRegister} style={styles.linkButton}>
+            Register here
+          </button>
+        </p>
+
+        {/* Mock Auth Testing Toolbar */}
+        <div style={{ marginTop: '20px', borderTop: '1px solid #334155', paddingTop: '12px', textAlign: 'center' }}>
           <button 
             type="button"
             onClick={() => setShowTestPanel(!showTestPanel)}
-            style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: '12px', cursor: 'pointer', textDecoration: 'underline' }}
+            style={{ background: 'none', border: 'none', color: '#818cf8', fontSize: '12px', cursor: 'pointer', textDecoration: 'underline' }}
           >
-            {showTestPanel ? 'Hide Member 6 Testing Toolbar' : '🧪 Member 6 Auth Testing Toolbar'}
+            {showTestPanel ? 'Hide Mock Testing Toolbar' : '🧪 Show Mock Testing Toolbar'}
           </button>
 
           {showTestPanel && (
-            <div style={{ marginTop: '10px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-              <p style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569', marginBottom: '8px' }}>Test Auth Scenarios:</p>
+            <div style={{ marginTop: '10px', background: '#0f172a', padding: '12px', borderRadius: '8px', border: '1px solid #334155' }}>
+              <p style={{ fontSize: '11px', fontWeight: 'bold', color: '#94a3b8', marginBottom: '8px' }}>Test Auth Scenarios (No Backend):</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }}>
                 <button
                   type="button"
@@ -120,7 +137,6 @@ export default function LoginPage({ onLoginSuccess }) {
                 >
                   Valid Member JWT
                 </button>
-
                 <button
                   type="button"
                   onClick={() => handleTestTokenLogin(mockTokens.validAdmin, 'admin', 'Admin User')}
@@ -128,21 +144,12 @@ export default function LoginPage({ onLoginSuccess }) {
                 >
                   Valid Admin JWT
                 </button>
-
                 <button
                   type="button"
                   onClick={() => handleTestTokenLogin(mockTokens.expired, 'member', 'Expired User')}
                   style={{ padding: '6px 10px', fontSize: '11px', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                 >
                   Test Expired JWT
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleTestTokenLogin(mockTokens.corrupted, 'member', 'Corrupted User')}
-                  style={{ padding: '6px 10px', fontSize: '11px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                >
-                  Test Invalid JWT
                 </button>
               </div>
             </div>
@@ -152,3 +159,18 @@ export default function LoginPage({ onLoginSuccess }) {
     </div>
   );
 }
+
+const styles = {
+  container: { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#0f172a' },
+  card: { width: '100%', maxWidth: '400px', padding: '32px', backgroundColor: '#1e293b', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', color: '#fff' },
+  title: { fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', textAlign: 'center' },
+  subtitle: { fontSize: '14px', color: '#94a3b8', marginBottom: '24px', textAlign: 'center' },
+  errorAlert: { backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '10px', borderRadius: '6px', fontSize: '14px', marginBottom: '16px' },
+  form: { display: 'flex', flexDirection: 'column', gap: '16px' },
+  inputGroup: { display: 'flex', flexDirection: 'column', gap: '6px' },
+  label: { fontSize: '14px', color: '#cbd5e1' },
+  input: { padding: '10px 14px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: '#fff', fontSize: '14px' },
+  button: { padding: '12px', backgroundColor: '#6366f1', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', marginTop: '8px' },
+  footerText: { marginTop: '20px', fontSize: '14px', color: '#94a3b8', textAlign: 'center' },
+  linkButton: { background: 'none', border: 'none', color: '#818cf8', cursor: 'pointer', fontWeight: '600', textDecoration: 'underline' },
+};

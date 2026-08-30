@@ -1,13 +1,14 @@
+// src/App.jsx
 import React, { useState } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
-import './App.css';
 
 function MainApp() {
-  const { isAuthenticated, login, logout } = useAuth();
+  const { isAuthenticated, loading, login, logout } = useAuth();
   const [activePage, setActivePage] = useState('board');
   const navigate = useNavigate();
 
@@ -21,6 +22,14 @@ function MainApp() {
     navigate('/login');
   };
 
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0f172a', color: '#fff' }}>
+        Loading session...
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
       <Routes>
@@ -32,14 +41,10 @@ function MainApp() {
           } 
         />
         
-        {/* Placeholder for Member 3 Registration page */}
         <Route 
           path="/register" 
           element={
-            <div style={{ padding: '40px', textAlign: 'center' }}>
-              <h2>Registration Page</h2>
-              <p>Member 3 registration form will render here.</p>
-            </div>
+            isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage onSwitchToLogin={() => navigate('/login')} onRegisterSuccess={() => navigate('/login')} />
           } 
         />
 
