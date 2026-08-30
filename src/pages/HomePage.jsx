@@ -29,9 +29,9 @@ const MEMBER_HISTORY_LOGS = {
 };
 
 export default function HomePage({ onLogout }) {
-
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -45,7 +45,12 @@ export default function HomePage({ onLogout }) {
       'DevOps',
       'Bugfix',
       ...tasks
-        .map((task) => task.tag || task.category || task.categoryTag)
+        .map(
+          (task) =>
+            task.tag ||
+            task.category ||
+            task.categoryTag
+        )
         .filter(Boolean)
     ])
   );
@@ -74,12 +79,10 @@ export default function HomePage({ onLogout }) {
   // =====================================================
 
   useEffect(() => {
-
     const fetchTasks = async () => {
-
       try {
-
         setLoading(true);
+        setError('');
 
         const data = await getTasks();
 
@@ -90,23 +93,20 @@ export default function HomePage({ onLogout }) {
         } else {
           setTasks([]);
         }
-
       } catch (error) {
+        console.error('Failed to load tasks:', error);
 
-        console.error(
-          'Failed to load tasks:',
-          error
+        setError(
+          'Unable to load tasks. Please check the server connection.'
         );
 
+        setTasks([]);
       } finally {
-
         setLoading(false);
-
       }
     };
 
     fetchTasks();
-
   }, []);
 
   // =====================================================
@@ -114,13 +114,19 @@ export default function HomePage({ onLogout }) {
   // =====================================================
 
   const handleAddTask = async (newTask) => {
-
     try {
+      setError('');
 
       const taskToCreate = {
         ...newTask,
-        status: newTask.status || newTask.column || 'To do',
-        column: newTask.column || newTask.status || 'To do'
+        status:
+          newTask.status ||
+          newTask.column ||
+          'To do',
+        column:
+          newTask.column ||
+          newTask.status ||
+          'To do'
       };
 
       const createdTask = await createTask(taskToCreate);
@@ -131,14 +137,12 @@ export default function HomePage({ onLogout }) {
       ]);
 
       setIsCreateModalOpen(false);
-
     } catch (error) {
+      console.error('Failed to create task:', error);
 
-      console.error(
-        'Failed to create task:',
-        error
+      setError(
+        'Failed to create the task. Please try again.'
       );
-
     }
   };
 
@@ -147,8 +151,8 @@ export default function HomePage({ onLogout }) {
   // =====================================================
 
   const handleDeleteTask = async (taskId) => {
-
     try {
+      setError('');
 
       await deleteTask(taskId);
 
@@ -158,14 +162,12 @@ export default function HomePage({ onLogout }) {
             String(task.id) !== String(taskId)
         )
       );
-
     } catch (error) {
+      console.error('Failed to delete task:', error);
 
-      console.error(
-        'Failed to delete task:',
-        error
+      setError(
+        'Failed to delete the task. Please try again.'
       );
-
     }
   };
 
@@ -177,8 +179,8 @@ export default function HomePage({ onLogout }) {
     taskId,
     newMember
   ) => {
-
     try {
+      setError('');
 
       const currentTask = tasks.find(
         (task) =>
@@ -208,14 +210,15 @@ export default function HomePage({ onLogout }) {
             : task
         )
       );
-
     } catch (error) {
-
       console.error(
         'Failed to update task member:',
         error
       );
 
+      setError(
+        'Failed to update the assigned member.'
+      );
     }
   };
 
@@ -228,8 +231,8 @@ export default function HomePage({ onLogout }) {
     taskId,
     newStatus
   ) => {
-
     try {
+      setError('');
 
       const currentTask = tasks.find(
         (task) =>
@@ -259,14 +262,15 @@ export default function HomePage({ onLogout }) {
             : task
         )
       );
-
     } catch (error) {
-
       console.error(
         'Failed to update task status:',
         error
       );
 
+      setError(
+        'Failed to update the task status.'
+      );
     }
   };
 
@@ -274,31 +278,26 @@ export default function HomePage({ onLogout }) {
   // SEARCH / FILTER TASKS
   // =====================================================
 
-  const filteredTasks = tasks.filter(
-    (task) => {
+  const filteredTasks = tasks.filter((task) => {
+    const title = task.title || '';
 
-      const title =
-        task.title || '';
+    const category =
+      task.tag ||
+      task.category ||
+      task.categoryTag ||
+      '';
 
-      const category =
-        task.tag ||
-        task.category ||
-        task.categoryTag ||
-        '';
-
-      return (
-        title
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        category
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase())
-      );
-    }
-  );
+    return (
+      title
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      category
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase())
+    );
+  });
 
   return (
-
     <div className="board-container">
 
       {/* ================= HEADER ================= */}
@@ -306,7 +305,6 @@ export default function HomePage({ onLogout }) {
       <header className="navbar">
 
         <div className="navbar-left">
-
           <div className="navbar-logo">
             K
           </div>
@@ -314,7 +312,6 @@ export default function HomePage({ onLogout }) {
           <h1 className="navbar-title">
             Kanban Flow
           </h1>
-
         </div>
 
         <div className="navbar-actions">
@@ -346,7 +343,6 @@ export default function HomePage({ onLogout }) {
                 x2="16.65"
                 y2="16.65"
               />
-
             </svg>
 
             <input
@@ -355,12 +351,9 @@ export default function HomePage({ onLogout }) {
               placeholder="Search tasks..."
               value={searchQuery}
               onChange={(e) =>
-                setSearchQuery(
-                  e.target.value
-                )
+                setSearchQuery(e.target.value)
               }
             />
-
           </div>
 
           {/* NOTIFICATION */}
@@ -370,7 +363,6 @@ export default function HomePage({ onLogout }) {
             title="Notifications"
             aria-label="Notifications"
           >
-
             <svg
               width="18"
               height="18"
@@ -381,15 +373,12 @@ export default function HomePage({ onLogout }) {
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
 
               <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-
             </svg>
 
             <span className="badge-dot" />
-
           </button>
 
           {/* USER PROFILE */}
@@ -399,7 +388,6 @@ export default function HomePage({ onLogout }) {
             onClick={onLogout}
             title="Click to Sign Out"
           >
-
             <div className="profile-avatar">
               AM
             </div>
@@ -418,11 +406,9 @@ export default function HomePage({ onLogout }) {
               </button>
 
             </div>
-
           </div>
 
         </div>
-
       </header>
 
       {/* ================= BODY ================= */}
@@ -471,7 +457,6 @@ export default function HomePage({ onLogout }) {
                 gap: '6px'
               }}
             >
-
               <svg
                 width="16"
                 height="16"
@@ -482,7 +467,6 @@ export default function HomePage({ onLogout }) {
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
-
                 <line
                   x1="12"
                   y1="5"
@@ -496,19 +480,33 @@ export default function HomePage({ onLogout }) {
                   x2="19"
                   y2="12"
                 />
-
               </svg>
 
               Add Task
-
             </button>
 
           </div>
 
+          {/* ================= ERROR STATE ================= */}
+
+          {error && (
+            <div
+              style={{
+                marginBottom: '16px',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                background: 'rgba(239, 68, 68, 0.1)',
+                color: '#ef4444',
+                fontSize: '13px'
+              }}
+            >
+              {error}
+            </div>
+          )}
+
           {/* ================= HISTORY ================= */}
 
           {selectedDate && (
-
             <div className="history-banner">
 
               <div
@@ -519,7 +517,6 @@ export default function HomePage({ onLogout }) {
                   marginBottom: '8px'
                 }}
               >
-
                 <h4
                   style={{
                     margin: 0,
@@ -527,7 +524,6 @@ export default function HomePage({ onLogout }) {
                     color: 'var(--text-primary)'
                   }}
                 >
-
                   Member Activity History for{' '}
 
                   <span
@@ -538,7 +534,6 @@ export default function HomePage({ onLogout }) {
                   >
                     {selectedDate}
                   </span>
-
                 </h4>
 
                 <button
@@ -564,15 +559,12 @@ export default function HomePage({ onLogout }) {
                   margin: 0
                 }}
               >
-
                 {MEMBER_HISTORY_LOGS[
                   selectedDate
                 ] ? (
-
                   MEMBER_HISTORY_LOGS[
                     selectedDate
                   ].map((log, index) => (
-
                     <li
                       key={index}
                       style={{
@@ -584,11 +576,8 @@ export default function HomePage({ onLogout }) {
                     >
                       {log}
                     </li>
-
                   ))
-
                 ) : (
-
                   <li
                     style={{
                       fontSize: '13px',
@@ -596,22 +585,17 @@ export default function HomePage({ onLogout }) {
                         'var(--text-muted)'
                     }}
                   >
-                    No recorded member history
-                    for this date.
+                    No recorded member history for this date.
                   </li>
-
                 )}
-
               </ul>
 
             </div>
-
           )}
 
           {/* ================= CREATE MODAL ================= */}
 
           {isCreateModalOpen && (
-
             <CreateTaskModal
               categories={categories}
               members={members}
@@ -620,8 +604,56 @@ export default function HomePage({ onLogout }) {
               }
               onAddTask={handleAddTask}
             />
-
           )}
+
+          {/* ================= EMPTY STATE ================= */}
+
+          {!loading &&
+            !error &&
+            tasks.length === 0 && (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '50px 20px',
+                  color: 'var(--text-muted)'
+                }}
+              >
+                <h3
+                  style={{
+                    marginBottom: '8px',
+                    color:
+                      'var(--text-secondary)'
+                  }}
+                >
+                  No tasks available
+                </h3>
+
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: '14px'
+                  }}
+                >
+                  Create a new task to get started.
+                </p>
+              </div>
+            )}
+
+          {/* SEARCH EMPTY STATE */}
+
+          {!loading &&
+            tasks.length > 0 &&
+            filteredTasks.length === 0 && (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '30px',
+                  color: 'var(--text-muted)'
+                }}
+              >
+                No tasks match your search.
+              </div>
+            )}
 
           {/* ================= KANBAN COLUMNS ================= */}
 
@@ -639,7 +671,6 @@ export default function HomePage({ onLogout }) {
                 );
 
               return (
-
                 <Column
                   key={columnName}
                   title={columnName}
@@ -685,15 +716,12 @@ export default function HomePage({ onLogout }) {
 
                   columns={COLUMNS}
                 />
-
               );
-
             })}
 
           </div>
 
         </main>
-
       </div>
 
       {/* ================= FOOTER ================= */}
@@ -728,6 +756,5 @@ export default function HomePage({ onLogout }) {
       </footer>
 
     </div>
-
   );
 }

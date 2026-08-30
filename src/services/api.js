@@ -1,48 +1,117 @@
 import axios from 'axios';
 
-// Backend එකේ URL එක
-const API_BASE_URL = 'http://localhost:5000/api/tasks';
+const API_BASE_URL = 'http://localhost:5000/api';
 
-// 1. ඔක්කොම tasks ටික ගන්න (Read)
+// Create one centralized Axios client
+const apiClient = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json'
+    }
+});
+
+// =====================================================
+// REQUEST INTERCEPTOR
+// Automatically send JWT using Bearer format
+// =====================================================
+
+apiClient.interceptors.request.use(
+    (config) => {
+        const token =
+            localStorage.getItem('token') ||
+            localStorage.getItem('authToken') ||
+            localStorage.getItem('jwt');
+
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// =====================================================
+// RESPONSE INTERCEPTOR
+// Centralized 401 handling
+// =====================================================
+
+apiClient.interceptors.response.use(
+    (response) => response,
+
+    (error) => {
+        if (error.response?.status === 401) {
+            console.warn(
+                'Authentication expired or invalid. Logging out.'
+            );
+
+            // Remove expired / invalid authentication data
+            localStorage.removeItem('token');
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('jwt');
+            localStorage.removeItem('isLoggedIn');
+
+            // Notify the React application
+            window.dispatchEvent(
+                new Event('auth-expired')
+            );
+        }
+
+        return Promise.reject(error);
+    }
+);
+
+// =====================================================
+// TASK API
+// =====================================================
+
+// GET all tasks
 export const getTasks = async () => {
-    try {
-        const response = await axios.get(API_BASE_URL);
-        return response.data;
-    } catch (error) {
-        console.error("Error fetching tasks:", error);
-        throw error;
-    }
+    const response = await apiClient.get('/tasks');
+    return response.data;
 };
 
-// 2. අලුත් task එකක් හදන්න (Create)
+// GET single task
+export const getTaskById = async (id) => {
+    const response = await apiClient.get(
+        `/tasks/${id}`
+    );
+
+    return response.data;
+};
+
+// CREATE task
 export const createTask = async (taskData) => {
-    try {
-        const response = await axios.post(API_BASE_URL, taskData);
-        return response.data;
-    } catch (error) {
-        console.error("Error creating task:", error);
-        throw error;
-    }
+    const response = await apiClient.post(
+        '/tasks',
+        taskData
+    );
+
+    return response.data;
 };
 
-// 3. Task එකක් update කරන්න (Update - Column මාරු කරද්දි)
-export const updateTask = async (id, taskData) => {
-    try {
-        const response = await axios.put(`${API_BASE_URL}/${id}`, taskData);
-        return response.data;
-    } catch (error) {
-        console.error("Error updating task:", error);
-        throw error;
-    }
+// UPDATE task
+export const updateTask = async (
+    id,
+    taskData
+) => {
+    const response = await apiClient.put(
+        `/tasks/${id}`,
+        taskData
+    );
+
+    return response.data;
 };
 
-// 4. Task එකක් මකන්න (Delete)
+// DELETE task
 export const deleteTask = async (id) => {
-    try {
-        const response = await axios.delete(`${API_BASE_URL}/${id}`);
-        return response.data;
-    } catch (error) {
-        console.error("Error deleting task:", error);
-        throw error;
-    }
+    const response = await apiClient.delete(
+        `/tasks/${id}`
+    );
+
+    return response.data;
 };
+
+export default apiClient;
