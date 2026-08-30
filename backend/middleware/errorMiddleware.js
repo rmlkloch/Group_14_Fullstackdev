@@ -1,27 +1,36 @@
 // backend/middleware/errorMiddleware.js
+import { NotFoundError } from '../utils/AppError.js';
 
 /**
- * Middleware to handle requests to routes that don't exist (404)
+ * Centralized 404 handler for unknown routes
  */
 const notFound = (req, res, next) => {
-  const error = new Error(`Not Found - ${req.originalUrl}`);
-  res.status(404);
-  next(error); // Passes the error to the errorHandler below
+  const error = new NotFoundError(`Route Not Found - ${req.originalUrl}`);
+  next(error);
 };
 
 /**
  * Centralized Error Handler Middleware
- * Formats all backend errors into a standard JSON response
+ * Standard error structure (error) without exposing 500 internals
  */
 const errorHandler = (err, req, res, next) => {
-  // If status code is 200 but an error was thrown, default to 500 (Server Error)
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  let statusCode = err.statusCode || (res.statusCode === 200 ? 500 : res.statusCode);
+  let message = err.message || 'Something went wrong';
 
+  // Proper 500 error handling without exposing database/internals in production
+  if (statusCode === 500 && process.env.NODE_ENV === 'production') {
+    message = 'Internal Server Error';
+  }
+
+  // Standard error structure
   res.status(statusCode).json({
-    success: false,
-    message: err.message,
-    // Only reveal the error stack trace if we are in development mode
-    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+    error: {
+      message: message,
+      // Include per-field validation details if they exist
+      ...(err.errors && { details: err.errors }), 
+      // Hide stack trace in production
+      stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
+    }
   });
 };
 

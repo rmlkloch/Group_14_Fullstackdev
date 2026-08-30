@@ -1,38 +1,48 @@
 // backend/middleware/validationMiddleware.js
+import { z } from 'zod';
+import { ValidationError } from '../utils/AppError.js';
 
 /**
- * Middleware to validate task creation and updates
+ * Zod Schemas for Authentication and Tasks
  */
-const validateTask = (req, res, next) => {
-  const { title } = req.body;
+const authSchema = z.object({
+  email: z.string().email('Invalid email address format'),
+  password: z.string().min(6, 'Password must be at least 6 characters long'),
+});
 
-  // Check if title is missing or empty
-  if (!title || typeof title !== 'string' || title.trim() === '') {
-    res.status(400); // 400 Bad Request
-    throw new Error('Validation Error: Task title is required');
+const createTaskSchema = z.object({
+  title: z.string().min(1, 'Task title is required').trim(),
+  description: z.string().optional(),
+  status: z.enum(['To do', 'Doing', 'Done']).optional(),
+});
+
+// PATCH requests only require the fields being updated
+const updateTaskSchema = z.object({
+  title: z.string().min(1, 'Task title cannot be empty').trim().optional(),
+  description: z.string().optional(),
+  status: z.enum(['To do', 'Doing', 'Done']).optional(),
+});
+
+/**
+ * Reusable validation middleware
+ * Validates req.body against a provided Zod schema and extracts per-field details
+ */
+const validate = (schema) => (req, res, next) => {
+  const result = schema.safeParse(req.body);
+
+  if (!result.success) {
+    // Map Zod errors into an array of per-field validation details
+    const formattedErrors = result.error.issues.map((issue) => ({
+      field: issue.path.join('.'),
+      message: issue.message,
+    }));
+
+    return next(new ValidationError('Invalid input data', formattedErrors));
   }
 
-  // If everything is valid, proceed to the controller
+  // Replace req.body with the sanitized/parsed data from Zod
+  req.body = result.data;
   next();
 };
 
-/**
- * Middleware to validate user registration
- */
-const validateRegister = (req, res, next) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    res.status(400);
-    throw new Error('Validation Error: Email and password are required');
-  }
-
-  if (password.length < 6) {
-    res.status(400);
-    throw new Error('Validation Error: Password must be at least 6 characters long');
-  }
-
-  next();
-};
-
-export { validateTask, validateRegister };
+export { validate, authSchema, createTaskSchema, updateTaskSchema };

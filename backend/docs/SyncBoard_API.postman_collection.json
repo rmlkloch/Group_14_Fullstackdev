@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "SyncBoard API Contract",
-    "description": "Phase 2 API Documentation for SyncBoard.",
+    "name": "SyncBoard API Contract v2.1",
+    "description": "Updated API Documentation including boards, /me, and PATCH updates.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -31,20 +31,53 @@
             },
             "url": {"raw": "http://localhost:5000/api/auth/login", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "auth", "login"]}
           }
+        },
+        {
+          "name": "Get Current User (Me)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:5000/api/auth/me", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "auth", "me"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Boards",
+      "item": [
+        {
+          "name": "Get All Boards",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:5000/api/boards", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "boards"]}
+          }
+        },
+        {
+          "name": "Create Board",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer YOUR_TOKEN_HERE"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Project Alpha Board\"\n}"
+            },
+            "url": {"raw": "http://localhost:5000/api/boards", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "boards"]}
+          }
+        },
+        {
+          "name": "Get Board Tasks",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:5000/api/boards/1/tasks", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "boards", "1", "tasks"]}
+          }
         }
       ]
     },
     {
       "name": "Tasks",
       "item": [
-        {
-          "name": "Get All Tasks",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer YOUR_TOKEN_HERE"}],
-            "url": {"raw": "http://localhost:5000/api/tasks", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "tasks"]}
-          }
-        },
         {
           "name": "Create Task",
           "request": {
@@ -58,17 +91,9 @@
           }
         },
         {
-          "name": "Get Single Task",
+          "name": "Update Task (PATCH)",
           "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer YOUR_TOKEN_HERE"}],
-            "url": {"raw": "http://localhost:5000/api/tasks/1", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "tasks", "1"]}
-          }
-        },
-        {
-          "name": "Update Task",
-          "request": {
-            "method": "PUT",
+            "method": "PATCH",
             "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer YOUR_TOKEN_HERE"}],
             "body": {
               "mode": "raw",
