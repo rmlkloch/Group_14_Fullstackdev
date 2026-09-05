@@ -81,7 +81,9 @@ taskSchema.pre('save', function (next) {
   if (this.isModified() && !this.isNew && !this.isDirectModified('version')) {
     this.version += 1;
   }
-  next();
+  if (typeof next === 'function') {
+    next();
+  }
 });
 
 // Indexes for common queries and performance
