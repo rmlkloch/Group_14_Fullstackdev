@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const Task = require('../models/Task');
 
+const { buildQueryOptions } = require('../services/queryService');
+
 /**
  * @desc    Fetch tasks from MongoDB with filtering, sorting, pagination, and projection
  * @route   GET /api/tasks
@@ -8,56 +10,19 @@ const Task = require('../models/Task');
  */
 exports.getTasks = async (req, res) => {
   try {
-    const {
-      boardId,
-      status,
-      assignedTo,
-      assignee,
-      sortBy,
-      order,
-      page = 1,
-      limit = 10,
-      fields,
-    } = req.query;
+    const { filter, sortOptions, projection, page, limit, skip } = buildQueryOptions(req.query);
 
-    // 1. Build filter query
-    const query = {};
+    // Query total count for pagination metadata using the dynamically built filter
+    const totalTasks = await Task.countDocuments(filter);
+    const totalPages = Math.ceil(totalTasks / limit) || (totalTasks === 0 ? 0 : 1);
 
-    if (boardId) {
-      query.boardId = boardId;
-    }
-
-    if (status) {
-      query.status = status;
-    }
-
-    const assigneeId = assignedTo || assignee;
-    if (assigneeId) {
-      query.assignee = assigneeId;
-    }
-
-    // 2. Dynamic sorting
-    const sortField = sortBy || 'createdAt';
-    const sortOrder = order === 'asc' || order === '1' ? 1 : -1;
-    const sortOptions = { [sortField]: sortOrder };
-
-    // 3. Pagination setup
-    const pageNum = Math.max(1, parseInt(page, 10) || 1);
-    const limitNum = Math.max(1, parseInt(limit, 10) || 10);
-    const skip = (pageNum - 1) * limitNum;
-
-    // 4. Query total count for pagination metadata
-    const totalTasks = await Task.countDocuments(query);
-    const totalPages = Math.ceil(totalTasks / limitNum) || (totalTasks === 0 ? 0 : 1);
-
-    // 5. Query execution with pagination & optional projection
-    let taskQuery = Task.find(query)
+    // Query execution with pagination, optional projection, and sorting
+    let taskQuery = Task.find(filter)
       .sort(sortOptions)
       .skip(skip)
-      .limit(limitNum);
+      .limit(limit);
 
-    if (fields) {
-      const projection = fields.split(',').join(' ');
+    if (projection) {
       taskQuery = taskQuery.select(projection);
     }
 
@@ -67,7 +32,7 @@ exports.getTasks = async (req, res) => {
       tasks,
       totalTasks,
       totalPages,
-      currentPage: pageNum,
+      currentPage: page,
     });
   } catch (error) {
     console.error('Error in getTasks:', error.message);

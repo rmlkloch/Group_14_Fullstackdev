@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const Board = require('../models/Board');
 const Task = require('../models/Task');
 
+const { buildQueryOptions } = require('../services/queryService');
+
 /**
  * @desc    Get all boards for authenticated user
  * @route   GET /api/boards
@@ -10,14 +12,25 @@ const Task = require('../models/Task');
 exports.getBoards = async (req, res) => {
   try {
     const userId = req.user ? req.user._id : null;
-    const filter = userId
+    
+    // Base filter to ensure users only see their own boards
+    const baseFilter = userId
       ? { $or: [{ ownerId: userId }, { members: userId }] }
       : {};
 
-    const { sortBy = 'createdAt', order = 'desc' } = req.query;
-    const sortOrder = order === 'asc' || order === '1' ? 1 : -1;
+    // Get dynamic options from query service
+    const { filter, sortOptions, projection } = buildQueryOptions(req.query);
 
-    const boards = await Board.find(filter).sort({ [sortBy]: sortOrder });
+    // Merge base authentication filter with any dynamic filters passed in the query
+    const finalFilter = { ...baseFilter, ...filter };
+
+    let boardQuery = Board.find(finalFilter).sort(sortOptions);
+
+    if (projection) {
+      boardQuery = boardQuery.select(projection);
+    }
+
+    const boards = await boardQuery;
 
     return res.status(200).json(boards);
   } catch (error) {
