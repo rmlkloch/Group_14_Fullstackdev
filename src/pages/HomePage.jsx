@@ -6,49 +6,10 @@ import useTasks from '../hooks/useTasks';
 
 const COLUMNS = ['To do', 'Doing', 'Done'];
 
-// History logs linked to dates
-const MEMBER_HISTORY_LOGS = {
-  '2026-08-01': [
-    'JD created initial task wireframes.',
-    'AM set up basic app routing.'
-  ],
-  '2026-08-03': [
-    'SK resolved WebSocket connection edge cases.',
-    'EL added CI/CD GitHub Actions workflow.'
-  ],
-  '2026-08-05': [
-    'OW completed unit test suite for payment controller.',
-    'NJ added team side panel, member badges, and history calendar view.'
-  ]
-};
-
-export default function HomePage({ onLogout }) {
-  const {
-    tasks,
-    loading,
-    error,
-    conflictError,
-    fetchTasks,
-    addTask,
-    removeTask,
-    moveTaskStatus,
-    changeTaskMember,
-    clearConflictError
-  } = useTasks();
-
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(null);
-
-  // Dynamic Categories from tasks
+// Dynamic Categories derived purely from task data
   const categories = Array.from(
-    new Set([
-      'Design',
-      'Testing',
-      'Security',
-      'DevOps',
-      'Bugfix',
-      ...tasks
+    new Set(
+      tasks
         .map(
           (task) =>
             task.tag ||
@@ -56,18 +17,13 @@ export default function HomePage({ onLogout }) {
             task.categoryTag
         )
         .filter(Boolean)
-    ])
+    )
   );
 
-  // Dynamic Members from tasks
+  // Dynamic Members derived purely from task data
   const members = Array.from(
-    new Set([
-      'JD',
-      'AM',
-      'SK',
-      'EL',
-      'OW',
-      ...tasks
+    new Set(
+      tasks
         .map(
           (task) =>
             task.assignedTo ||
@@ -75,8 +31,9 @@ export default function HomePage({ onLogout }) {
             task.assignedMember
         )
         .filter(Boolean)
-    ])
+    )
   );
+
 
   // =====================================================
   // TASK HANDLERS
@@ -214,6 +171,7 @@ export default function HomePage({ onLogout }) {
         <SidePanel
           selectedDate={selectedDate}
           onSelectDate={setSelectedDate}
+          members={members}
         />
 
         {/* MAIN BOARD */}
@@ -371,24 +329,9 @@ export default function HomePage({ onLogout }) {
               </div>
 
               <ul style={{ paddingLeft: '20px', margin: 0 }}>
-                {MEMBER_HISTORY_LOGS[selectedDate] ? (
-                  MEMBER_HISTORY_LOGS[selectedDate].map((log, index) => (
-                    <li
-                      key={index}
-                      style={{
-                        fontSize: '13px',
-                        color: 'var(--text-secondary)',
-                        marginBottom: '4px'
-                      }}
-                    >
-                      {log}
-                    </li>
-                  ))
-                ) : (
-                  <li style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                    No recorded member history for this date.
-                  </li>
-                )}
+                <li style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                  No recorded member history for this date.
+                </li>
               </ul>
             </div>
           )}
