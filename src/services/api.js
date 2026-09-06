@@ -42,76 +42,35 @@ apiClient.interceptors.response.use(
     (response) => response,
 
     (error) => {
-        if (error.response?.status === 401) {
-            console.warn(
-                'Authentication expired or invalid. Logging out.'
-            );
+        const status = error.response?.status;
 
-            // Remove expired / invalid authentication data
+        if (status === 401) {
+            console.warn('Authentication expired or invalid (401). Logging out.');
             localStorage.removeItem('token');
             localStorage.removeItem('authToken');
             localStorage.removeItem('jwt');
             localStorage.removeItem('isLoggedIn');
-
-            // Notify the React application
-            window.dispatchEvent(
-                new Event('auth-expired')
-            );
+            window.dispatchEvent(new Event('auth-expired'));
+        } else if (status === 403) {
+            console.warn('Forbidden access (403).');
+        } else if (status === 404) {
+            console.warn('Requested resource not found (404).');
+        } else if (status === 409) {
+            console.warn('Conflict detected (409). Optimistic concurrency failure.');
         }
 
         return Promise.reject(error);
     }
 );
 
-// =====================================================
-// TASK API
-// =====================================================
-
-// GET all tasks
-export const getTasks = async () => {
-    const response = await apiClient.get('/tasks');
-    return response.data;
-};
-
-// GET single task
-export const getTaskById = async (id) => {
-    const response = await apiClient.get(
-        `/tasks/${id}`
-    );
-
-    return response.data;
-};
-
-// CREATE task
-export const createTask = async (taskData) => {
-    const response = await apiClient.post(
-        '/tasks',
-        taskData
-    );
-
-    return response.data;
-};
-
-// UPDATE task
-export const updateTask = async (
-    id,
-    taskData
-) => {
-    const response = await apiClient.put(
-        `/tasks/${id}`,
-        taskData
-    );
-
-    return response.data;
-};
-
-// DELETE task
-export const deleteTask = async (id) => {
-    const response = await apiClient.delete(
-        `/tasks/${id}`
-    );
-
-    return response.data;
-};
+// Re-export task services for backwards compatibility
+export {
+    getTasks,
+    getTaskById,
+    createTask,
+    updateTask,
+    deleteTask
+} from './taskService';
 
 export default apiClient;
+
