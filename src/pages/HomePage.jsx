@@ -6,7 +6,25 @@ import useTasks from '../hooks/useTasks';
 
 const COLUMNS = ['To do', 'Doing', 'Done'];
 
-// Dynamic Categories derived purely from task data
+export default function HomePage({ onLogout, activePage, onNavigate }) {
+  const {
+    tasks,
+    loading,
+    error,
+    conflictError,
+    fetchTasks,
+    addTask,
+    removeTask,
+    moveTaskStatus,
+    changeTaskMember,
+    clearConflictError
+  } = useTasks();
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+
+  // Dynamic Categories derived purely from task data
   const categories = Array.from(
     new Set(
       tasks
@@ -17,7 +35,7 @@ const COLUMNS = ['To do', 'Doing', 'Done'];
             task.categoryTag
         )
         .filter(Boolean)
-    )
+      )
   );
 
   // Dynamic Members derived purely from task data
@@ -31,8 +49,9 @@ const COLUMNS = ['To do', 'Doing', 'Done'];
             task.assignedMember
         )
         .filter(Boolean)
-    )
+      )
   );
+
 
 
   // =====================================================
