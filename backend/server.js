@@ -15,8 +15,10 @@ try {
   console.warn('Unable to set custom DNS servers:', dnsErr.message);
 }
 
-// 2. Initialize database connection using your dedicated infrastructure
-connectDB();
+// 2. Initialize database connection if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+  connectDB();
+}
 
 // Route imports
 const authRoutes = require('./routes/authRoutes');
@@ -44,6 +46,10 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+module.exports = app;

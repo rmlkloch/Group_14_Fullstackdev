@@ -1,5 +1,11 @@
 const mongoose = require('mongoose');
 const Task = require('../models/Task');
+const {
+  parseFilter,
+  parseSort,
+  parsePagination,
+  isValidPaginationParam,
+} = require('../utils/apiFeatures');
 
 /**
  * @desc    Fetch tasks from MongoDB with filtering, sorting, pagination, and projection
@@ -8,43 +14,24 @@ const Task = require('../models/Task');
  */
 exports.getTasks = async (req, res) => {
   try {
-    const {
-      boardId,
-      status,
-      assignedTo,
-      assignee,
-      sortBy,
-      order,
-      page = 1,
-      limit = 10,
-      fields,
-    } = req.query;
-
-    // 1. Build filter query
-    const query = {};
-
-    if (boardId) {
-      query.boardId = boardId;
+    // 0. Validate pagination parameters if explicitly provided
+    if (
+      !isValidPaginationParam(req.query?.page) ||
+      !isValidPaginationParam(req.query?.limit)
+    ) {
+      return res
+        .status(400)
+        .json({ message: 'Invalid pagination parameters: page and limit must be positive integers' });
     }
 
-    if (status) {
-      query.status = status;
-    }
-
-    const assigneeId = assignedTo || assignee;
-    if (assigneeId) {
-      query.assignee = assigneeId;
-    }
-
-    // 2. Dynamic sorting
-    const sortField = sortBy || 'createdAt';
-    const sortOrder = order === 'asc' || order === '1' ? 1 : -1;
-    const sortOptions = { [sortField]: sortOrder };
-
-    // 3. Pagination setup
-    const pageNum = Math.max(1, parseInt(page, 10) || 1);
-    const limitNum = Math.max(1, parseInt(limit, 10) || 10);
-    const skip = (pageNum - 1) * limitNum;
+    // 1. Parse filter, sort, and pagination using shared helper
+    const allowedFields = ['boardId', 'status', 'assignee', 'priority'];
+    const query = parseFilter(req.query, allowedFields);
+    const sortOptions = parseSort(req.query.sortBy, req.query.order);
+    const { page: pageNum, limit: limitNum, skip } = parsePagination(
+      req.query.page,
+      req.query.limit
+    );
 
     // 4. Query total count for pagination metadata
     const totalTasks = await Task.countDocuments(query);
@@ -56,8 +43,8 @@ exports.getTasks = async (req, res) => {
       .skip(skip)
       .limit(limitNum);
 
-    if (fields) {
-      const projection = fields.split(',').join(' ');
+    if (req.query && req.query.fields) {
+      const projection = req.query.fields.split(',').join(' ');
       taskQuery = taskQuery.select(projection);
     }
 

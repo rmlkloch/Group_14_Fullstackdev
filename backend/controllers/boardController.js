@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Board = require('../models/Board');
 const Task = require('../models/Task');
+const { parseSort } = require('../utils/apiFeatures');
 
 /**
  * @desc    Get all boards for authenticated user
@@ -14,10 +15,9 @@ exports.getBoards = async (req, res) => {
       ? { $or: [{ ownerId: userId }, { members: userId }] }
       : {};
 
-    const { sortBy = 'createdAt', order = 'desc' } = req.query;
-    const sortOrder = order === 'asc' || order === '1' ? 1 : -1;
+    const sortOptions = parseSort(req.query?.sortBy, req.query?.order);
 
-    const boards = await Board.find(filter).sort({ [sortBy]: sortOrder });
+    const boards = await Board.find(filter).sort(sortOptions);
 
     return res.status(200).json(boards);
   } catch (error) {
