@@ -7,6 +7,8 @@ const {
   isValidPaginationParam,
 } = require('../utils/apiFeatures');
 
+const { buildQueryOptions } = require('../services/queryService');
+
 /**
  * @desc    Fetch tasks from MongoDB with filtering, sorting, pagination, and projection
  * @route   GET /api/tasks
@@ -14,7 +16,7 @@ const {
  */
 exports.getTasks = async (req, res) => {
   try {
-    // 0. Validate pagination parameters if explicitly provided
+// 0. Validate pagination parameters if explicitly provided (Your changes)
     if (
       !isValidPaginationParam(req.query?.page) ||
       !isValidPaginationParam(req.query?.limit)
@@ -24,27 +26,26 @@ exports.getTasks = async (req, res) => {
         .json({ message: 'Invalid pagination parameters: page and limit must be positive integers' });
     }
 
-    // 1. Parse filter, sort, and pagination using shared helper
+    // 1. Parse filter, sort, and pagination using your tested M4 API utility
     const allowedFields = ['boardId', 'status', 'assignee', 'priority'];
-    const query = parseFilter(req.query, allowedFields);
+    const filter = parseFilter(req.query, allowedFields);
     const sortOptions = parseSort(req.query.sortBy, req.query.order);
-    const { page: pageNum, limit: limitNum, skip } = parsePagination(
-      req.query.page,
-      req.query.limit
-    );
+    const { page, limit, skip } = parsePagination(req.query.page, req.query.limit);
 
-    // 4. Query total count for pagination metadata
-    const totalTasks = await Task.countDocuments(query);
-    const totalPages = Math.ceil(totalTasks / limitNum) || (totalTasks === 0 ? 0 : 1);
+    // 2. Get dynamic projection from teammate's query service
+    const { projection } = buildQueryOptions(req.query);
 
-    // 5. Query execution with pagination & optional projection
-    let taskQuery = Task.find(query)
+    // Query total count for pagination metadata using the dynamically built filter
+    const totalTasks = await Task.countDocuments(filter);
+    const totalPages = Math.ceil(totalTasks / limit) || (totalTasks === 0 ? 0 : 1);
+
+    // Query execution with pagination, optional projection, and sorting
+    let taskQuery = Task.find(filter)
       .sort(sortOptions)
       .skip(skip)
-      .limit(limitNum);
+      .limit(limit);
 
-    if (req.query && req.query.fields) {
-      const projection = req.query.fields.split(',').join(' ');
+if (projection) {
       taskQuery = taskQuery.select(projection);
     }
 
@@ -54,7 +55,7 @@ exports.getTasks = async (req, res) => {
       tasks,
       totalTasks,
       totalPages,
-      currentPage: pageNum,
+      currentPage: page,
     });
   } catch (error) {
     console.error('Error in getTasks:', error.message);

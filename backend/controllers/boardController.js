@@ -3,6 +3,8 @@ const Board = require('../models/Board');
 const Task = require('../models/Task');
 const { parseSort } = require('../utils/apiFeatures');
 
+const { buildQueryOptions } = require('../services/queryService');
+
 /**
  * @desc    Get all boards for authenticated user
  * @route   GET /api/boards
@@ -11,13 +13,28 @@ const { parseSort } = require('../utils/apiFeatures');
 exports.getBoards = async (req, res) => {
   try {
     const userId = req.user ? req.user._id : null;
-    const filter = userId
+    
+    // Base filter to ensure users only see their own boards
+    const baseFilter = userId
       ? { $or: [{ ownerId: userId }, { members: userId }] }
       : {};
 
+// Get dynamic options from query service (teammate's changes)
+    const { filter, projection } = buildQueryOptions(req.query);
+
+    // Apply your API utility for sorting (your changes)
     const sortOptions = parseSort(req.query?.sortBy, req.query?.order);
 
-    const boards = await Board.find(filter).sort(sortOptions);
+    // Merge base authentication filter with any dynamic filters passed in the query
+    const finalFilter = { ...baseFilter, ...filter };
+
+    let boardQuery = Board.find(finalFilter).sort(sortOptions);
+
+    if (projection) {
+      boardQuery = boardQuery.select(projection);
+    }
+
+    const boards = await boardQuery;
 
     return res.status(200).json(boards);
   } catch (error) {

@@ -17,7 +17,7 @@ const taskSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please add a status'],
       enum: {
-        values: ['To Do', 'Doing', 'Done'],
+        values: ['To Do', 'Doing', 'Done', 'todo', 'doing', 'done'],
         message: '{VALUE} is not a valid task status',
       },
       default: 'To Do',
@@ -38,8 +38,12 @@ const taskSchema = new mongoose.Schema(
     columnId: {
       type: mongoose.Schema.Types.ObjectId,
     },
+    position: {
+      type: Number,
+      default: 0,
+    },
     assignee: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.Mixed,
       ref: 'User',
       default: null,
     },
@@ -90,9 +94,11 @@ taskSchema.pre('save', function (next) {
 taskSchema.index({ boardId: 1 });
 taskSchema.index({ assignee: 1 });
 taskSchema.index({ status: 1 });
-taskSchema.index({ boardId: 1, status: 1 });
+taskSchema.index({ boardId: 1, status: 1, position: 1 });
+taskSchema.index({ assignee: 1, status: 1 });
 taskSchema.index({ dueDate: 1 });
 
 const Task = mongoose.model('Task', taskSchema);
 
 module.exports = Task;
+module.exports.Task = Task;
