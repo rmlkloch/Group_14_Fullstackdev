@@ -1,20 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const taskController = require('../controllers/taskController');
+const {
+  getTasks,
+  getTaskById,
+  createTask,
+  updateTask,
+  deleteTask,
+} = require('../controllers/taskController');
+const { protect } = require('../middleware/authMiddleware');
 
-// GET all tasks
-router.get('/', taskController.getTasks);
+// Route mapping for /api/tasks
+router
+  .route('/')
+  .get(protect, getTasks)
+  .post(protect, createTask);
 
-// POST a new task
-router.post('/', taskController.createTask);
-
-// GET a task by ID
-router.get('/:id', taskController.getTaskById);
-
-// PATCH/Update a task by ID
-router.patch('/:id', taskController.updateTask);
-
-// DELETE a task by ID
-router.delete('/:id', taskController.deleteTask);
+router
+  .route('/:id')
+  .get(protect, getTaskById)
+  .put(protect, updateTask)
+  .patch(protect, updateTask)
+  .delete(protect, deleteTask);
 
 module.exports = router;

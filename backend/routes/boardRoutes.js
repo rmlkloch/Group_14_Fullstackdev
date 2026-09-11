@@ -1,20 +1,45 @@
 const express = require('express');
 const router = express.Router();
-const boardController = require('../controllers/boardController');
+const {
+  getBoards,
+  getBoardById,
+  createBoard,
+  updateBoard,
+  deleteBoard,
+  addColumn,
+  updateColumn,
+  deleteColumn,
+  getBoardAnalytics,
+} = require('../controllers/boardController');
+const { protect } = require('../middleware/authMiddleware');
 
-// GET all boards & POST a new board
-router.get('/', boardController.getBoards);
-router.post('/', boardController.createBoard);
+// Board CRUD routes
+router
+  .route('/')
+  .get(protect, getBoards)
+  .post(protect, createBoard);
 
-// GET, PATCH, DELETE board by ID
-router.get('/:id', boardController.getBoardById);
-router.patch('/:id', boardController.updateBoard);
-router.delete('/:id', boardController.deleteBoard);
+router
+  .route('/:id')
+  .get(protect, getBoardById)
+  .put(protect, updateBoard)
+  .patch(protect, updateBoard)
+  .delete(protect, deleteBoard);
 
-// Column routes
-router.post('/:id/columns', boardController.addColumn);
-router.put('/:id/columns/reorder', boardController.reorderColumns);
-router.patch('/:id/columns/:columnId', boardController.updateColumn);
-router.delete('/:id/columns/:columnId', boardController.deleteColumn);
+// Board Analytics route
+router
+  .route('/:id/analytics')
+  .get(protect, getBoardAnalytics);
+
+// Embedded Column operations routes
+router
+  .route('/:id/columns')
+  .post(protect, addColumn);
+
+router
+  .route('/:id/columns/:columnId')
+  .put(protect, updateColumn)
+  .patch(protect, updateColumn)
+  .delete(protect, deleteColumn);
 
 module.exports = router;

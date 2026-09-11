@@ -1,18 +1,16 @@
 import React, { useState } from 'react';
 
-export default function SidePanel({ selectedDate, onSelectDate }) {
+export default function SidePanel({ selectedDate, onSelectDate, members = [] }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
 
-  // Team members list
-  const teamMembers = [
-    { id: 'JD', name: 'John Doe', role: 'Design' },
-    { id: 'AM', name: 'Alex Mercer', role: 'Security' },
-    { id: 'SK', name: 'Sarah Khan', role: 'Bugfix' },
-    { id: 'EL', name: 'Emma Louis', role: 'DevOps' },
-    { id: 'OW', name: 'Oliver Wright', role: 'Testing' },
-    { id: 'NJ', name: 'Newton James', role: 'DevOps' },
-  ];
+  // Format dynamic members or default list if empty
+  const teamMembers = members.length > 0
+    ? members.map((m) => typeof m === 'string' ? { id: m, name: m, role: 'Member' } : m)
+    : [
+        { id: 'AM', name: 'Alex Mercer', role: 'Security' }
+      ];
+
 
   return (
     <aside className={`side-panel ${isCollapsed ? 'collapsed' : ''}`}>

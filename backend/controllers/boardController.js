@@ -1,144 +1,428 @@
-const boardService = require('../services/boardService');
+const mongoose = require('mongoose');
+const Board = require('../models/Board');
+const Task = require('../models/Task');
 
-// Get all boards
-exports.getBoards = (req, res) => {
-  try {
-    const { ownerId, memberId, name, page, limit } = req.query;
-    const options = { ownerId, memberId, name, page, limit };
-    const result = boardService.getBoards(options);
-    res.status(200).json(result);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+const { buildQueryOptions } = require('../services/queryService');
 
-// Get board by ID
-exports.getBoardById = (req, res) => {
+/**
+ * @desc    Get all boards for authenticated user
+ * @route   GET /api/boards
+ * @access  Private
+ */
+exports.getBoards = async (req, res) => {
   try {
-    const board = boardService.getBoardById(req.params.id);
-    res.status(200).json(board);
-  } catch (error) {
-    if (error.message === 'Board not found') {
-      return res.status(404).json({ message: error.message });
+    const userId = req.user ? req.user._id : null;
+    
+    // Base filter to ensure users only see their own boards
+    const baseFilter = userId
+      ? { $or: [{ ownerId: userId }, { members: userId }] }
+      : {};
+
+    // Get dynamic options from query service
+    const { filter, sortOptions, projection } = buildQueryOptions(req.query);
+
+    // Merge base authentication filter with any dynamic filters passed in the query
+    const finalFilter = { ...baseFilter, ...filter };
+
+    let boardQuery = Board.find(finalFilter).sort(sortOptions);
+
+    if (projection) {
+      boardQuery = boardQuery.select(projection);
     }
-    res.status(500).json({ message: error.message });
+
+    const boards = await boardQuery;
+
+    return res.status(200).json(boards);
+  } catch (error) {
+    console.error('Error in getBoards:', error.message);
+    return res.status(500).json({ message: error.message });
   }
 };
 
-// Create a new board
-exports.createBoard = (req, res) => {
+/**
+ * @desc    Get single board by ID with populated columns
+ * @route   GET /api/boards/:id
+ * @access  Private
+ */
+exports.getBoardById = async (req, res) => {
   try {
-    const newBoard = boardService.createBoard(req.body);
-    res.status(201).json(newBoard);
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid board ID format' });
+    }
+
+    const board = await Board.findById(id)
+      .populate('ownerId', 'name email avatar')
+      .populate('members', 'name email avatar');
+
+    if (!board) {
+      return res.status(404).json({ message: 'Board not found' });
+    }
+
+    return res.status(200).json(board);
   } catch (error) {
-    if (
-      error.message === 'Board name is required' ||
-      error.message === 'Board name cannot exceed 100 characters' ||
-      error.message === 'Owner ID is required'
-    ) {
+    console.error('Error in getBoardById:', error.message);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @desc    Create a new board with default embedded columns if none provided
+ * @route   POST /api/boards
+ * @access  Private
+ */
+exports.createBoard = async (req, res) => {
+  try {
+    const { name, description, members, columns } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: 'Please add a board name' });
+    }
+
+    const ownerId = req.user ? req.user._id : req.body.ownerId;
+
+    if (!ownerId) {
+      return res.status(400).json({ message: 'Owner ID is required' });
+    }
+
+    const boardData = {
+      name: name.trim(),
+      description: description ? description.trim() : '',
+      ownerId,
+      members: members || [],
+    };
+
+    if (columns && Array.isArray(columns) && columns.length > 0) {
+      boardData.columns = columns;
+    }
+
+    const board = new Board(boardData);
+    const createdBoard = await board.save();
+
+    return res.status(201).json(createdBoard);
+  } catch (error) {
+    console.error('Error in createBoard:', error.message);
+    if (error.name === 'ValidationError') {
       return res.status(400).json({ message: error.message });
     }
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
-// Update an existing board
-exports.updateBoard = (req, res) => {
+/**
+ * @desc    Update board details (name, description, members)
+ * @route   PUT /api/boards/:id
+ * @access  Private
+ */
+exports.updateBoard = async (req, res) => {
   try {
-    const updatedBoard = boardService.updateBoard(req.params.id, req.body);
-    res.status(200).json(updatedBoard);
-  } catch (error) {
-    if (error.message === 'Board not found') {
-      return res.status(404).json({ message: error.message });
-    }
-    if (
-      error.message === 'Board name cannot be empty' ||
-      error.message === 'Board name cannot exceed 100 characters'
-    ) {
-      return res.status(400).json({ message: error.message });
-    }
-    res.status(500).json({ message: error.message });
-  }
-};
+    const { id } = req.params;
 
-// Delete a board
-exports.deleteBoard = (req, res) => {
-  try {
-    boardService.deleteBoard(req.params.id);
-    res.status(200).json({ message: 'Board deleted successfully' });
-  } catch (error) {
-    if (error.message === 'Board not found') {
-      return res.status(404).json({ message: error.message });
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid board ID format' });
     }
-    res.status(500).json({ message: error.message });
-  }
-};
 
-// Add column to board
-exports.addColumn = (req, res) => {
-  try {
-    const newColumn = boardService.addColumn(req.params.id, req.body);
-    res.status(201).json(newColumn);
-  } catch (error) {
-    if (error.message === 'Board not found') {
-      return res.status(404).json({ message: error.message });
-    }
-    if (error.message === 'Column title is required') {
-      return res.status(400).json({ message: error.message });
-    }
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// Update column in board
-exports.updateColumn = (req, res) => {
-  try {
-    const updatedColumn = boardService.updateColumn(
-      req.params.id,
-      req.params.columnId,
-      req.body
+    const updatedBoard = await Board.findByIdAndUpdate(
+      id,
+      { $set: req.body },
+      { new: true, runValidators: true }
     );
-    res.status(200).json(updatedColumn);
-  } catch (error) {
-    if (error.message === 'Board not found' || error.message === 'Column not found') {
-      return res.status(404).json({ message: error.message });
+
+    if (!updatedBoard) {
+      return res.status(404).json({ message: 'Board not found' });
     }
-    if (error.message === 'Column title cannot be empty') {
+
+    return res.status(200).json(updatedBoard);
+  } catch (error) {
+    console.error('Error in updateBoard:', error.message);
+    if (error.name === 'ValidationError') {
       return res.status(400).json({ message: error.message });
     }
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
-// Delete column from board
-exports.deleteColumn = (req, res) => {
+/**
+ * @desc    Delete board and cascade delete associated tasks
+ * @route   DELETE /api/boards/:id
+ * @access  Private
+ */
+exports.deleteBoard = async (req, res) => {
   try {
-    boardService.deleteColumn(req.params.id, req.params.columnId);
-    res.status(200).json({ message: 'Column deleted successfully' });
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid board ID format' });
+    }
+
+    const deletedBoard = await Board.findByIdAndDelete(id);
+
+    if (!deletedBoard) {
+      return res.status(404).json({ message: 'Board not found' });
+    }
+
+    // Cascade clean up associated tasks
+    await Task.deleteMany({ boardId: id });
+
+    return res.status(200).json({ message: 'Board and associated tasks removed' });
   } catch (error) {
-    if (error.message === 'Board not found' || error.message === 'Column not found') {
-      return res.status(404).json({ message: error.message });
-    }
-    if (error.message === 'Cannot delete column: Board must have at least one column') {
-      return res.status(400).json({ message: error.message });
-    }
-    res.status(500).json({ message: error.message });
+    console.error('Error in deleteBoard:', error.message);
+    return res.status(500).json({ message: error.message });
   }
 };
 
-// Reorder columns
-exports.reorderColumns = (req, res) => {
+/**
+ * @desc    Add a new embedded column to a board
+ * @route   POST /api/boards/:id/columns
+ * @access  Private
+ */
+exports.addColumn = async (req, res) => {
   try {
-    const { columnOrderIds } = req.body;
-    const reordered = boardService.reorderColumns(req.params.id, columnOrderIds);
-    res.status(200).json(reordered);
-  } catch (error) {
-    if (error.message === 'Board not found') {
-      return res.status(404).json({ message: error.message });
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid board ID format' });
     }
-    if (error.message === 'Column order array must be provided') {
+
+    const { title, position, color } = req.body;
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({ message: 'Please add a column title' });
+    }
+
+    const board = await Board.findById(id);
+
+    if (!board) {
+      return res.status(404).json({ message: 'Board not found' });
+    }
+
+    const newPosition = position !== undefined ? position : board.columns.length;
+
+    const newColumn = {
+      title: title.trim(),
+      position: newPosition,
+      color: color || '#6366f1',
+    };
+
+    const updatedBoard = await Board.findByIdAndUpdate(
+      id,
+      { $push: { columns: newColumn } },
+      { new: true, runValidators: true }
+    );
+
+    return res.status(201).json(updatedBoard);
+  } catch (error) {
+    console.error('Error in addColumn:', error.message);
+    if (error.name === 'ValidationError') {
       return res.status(400).json({ message: error.message });
     }
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @desc    Update an embedded column's properties (title, position, color)
+ * @route   PUT /api/boards/:id/columns/:columnId
+ * @access  Private
+ */
+exports.updateColumn = async (req, res) => {
+  try {
+    const { id, columnId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(columnId)) {
+      return res.status(400).json({ message: 'Invalid board or column ID format' });
+    }
+
+    const { title, position, color } = req.body;
+    const updateFields = {};
+
+    if (title !== undefined) updateFields['columns.$.title'] = title.trim();
+    if (position !== undefined) updateFields['columns.$.position'] = position;
+    if (color !== undefined) updateFields['columns.$.color'] = color;
+
+    const updatedBoard = await Board.findOneAndUpdate(
+      { _id: id, 'columns._id': columnId },
+      { $set: updateFields },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedBoard) {
+      return res.status(404).json({ message: 'Board or column not found' });
+    }
+
+    return res.status(200).json(updatedBoard);
+  } catch (error) {
+    console.error('Error in updateColumn:', error.message);
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: error.message });
+    }
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @desc    Delete an embedded column from a board
+ * @route   DELETE /api/boards/:id/columns/:columnId
+ * @access  Private
+ */
+exports.deleteColumn = async (req, res) => {
+  try {
+    const { id, columnId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(columnId)) {
+      return res.status(400).json({ message: 'Invalid board or column ID format' });
+    }
+
+    const updatedBoard = await Board.findByIdAndUpdate(
+      id,
+      { $pull: { columns: { _id: columnId } } },
+      { new: true }
+    );
+
+    if (!updatedBoard) {
+      return res.status(404).json({ message: 'Board not found' });
+    }
+
+    return res.status(200).json(updatedBoard);
+  } catch (error) {
+    console.error('Error in deleteColumn:', error.message);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @desc    Get board analytics & statistics via MongoDB aggregation pipeline
+ * @route   GET /api/boards/:id/analytics (or /api/boards/:boardId/analytics)
+ * @access  Private
+ */
+exports.getBoardAnalytics = async (req, res) => {
+  try {
+    const id = req.params.id || req.params.boardId;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid board ID format' });
+    }
+
+    const boardObjectId = new mongoose.Types.ObjectId(id);
+
+    // Verify board exists
+    const board = await Board.findById(id);
+    if (!board) {
+      return res.status(404).json({ message: 'Board not found' });
+    }
+
+    const now = new Date();
+
+    // Aggregation pipeline using $facet
+    const analyticsResults = await Task.aggregate([
+      {
+        $match: { boardId: boardObjectId },
+      },
+      {
+        $facet: {
+          taskCounts: [{ $count: 'total' }],
+          tasksByStatus: [
+            {
+              $group: {
+                _id: '$status',
+                count: { $sum: 1 },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                status: '$_id',
+                count: 1,
+              },
+            },
+          ],
+          tasksByAssignee: [
+            {
+              $group: {
+                _id: '$assignee',
+                count: { $sum: 1 },
+              },
+            },
+            {
+              $lookup: {
+                from: 'users',
+                localField: '_id',
+                foreignField: '_id',
+                as: 'user',
+              },
+            },
+            {
+              $unwind: {
+                path: '$user',
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                assigneeId: '$_id',
+                count: 1,
+                user: {
+                  $cond: {
+                    if: { $ne: ['$_id', null] },
+                    then: {
+                      id: '$user._id',
+                      name: '$user.name',
+                      email: '$user.email',
+                    },
+                    else: null,
+                  },
+                },
+              },
+            },
+          ],
+          overdueTasks: [
+            {
+              $match: {
+                dueDate: { $ne: null, $lt: now },
+                status: { $ne: 'Done' },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                id: '$_id',
+                title: 1,
+                dueDate: 1,
+                status: 1,
+                priority: 1,
+                assignee: 1,
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    const resultFacet = analyticsResults[0] || {};
+    const totalTasks =
+      resultFacet.taskCounts && resultFacet.taskCounts.length > 0
+        ? resultFacet.taskCounts[0].total
+        : 0;
+
+    const tasksByStatus = resultFacet.tasksByStatus || [];
+    const tasksByAssignee = resultFacet.tasksByAssignee || [];
+    const overdueList = resultFacet.overdueTasks || [];
+
+    return res.status(200).json({
+      boardId: id,
+      boardName: board.name,
+      totalTasks,
+      tasksByStatus,
+      tasksByAssignee,
+      overdueTasks: {
+        count: overdueList.length,
+        tasks: overdueList,
+      },
+    });
+  } catch (error) {
+    console.error('Error in getBoardAnalytics:', error.message);
+    return res.status(500).json({ message: error.message });
   }
 };

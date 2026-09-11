@@ -1,6 +1,6 @@
 const dotenv = require('dotenv');
-const mongoose = require('mongoose');
 const dns = require('dns');
+const connectDB = require('./config/database');
 const app = require('./app');
 
 // Load environment variables
@@ -13,28 +13,19 @@ try {
   console.warn('Unable to set custom DNS servers:', dnsErr.message);
 }
 
+// Initialize database connection (Skip during tests to allow in-memory DB)
+if (process.env.NODE_ENV !== 'test') {
+  connectDB();
+}
+
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/syncboard';
 
-const mongooseOptions = {
-  serverSelectionTimeoutMS: 5000,
-};
-
-// Connect to MongoDB and start server
-mongoose
-  .connect(MONGO_URI, mongooseOptions)
-  .then(() => {
-    console.log('MongoDB connected successfully');
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error('MongoDB connection failed:', err.message || err);
-    if (err.code === 'ECONNREFUSED' || (err.message && err.message.includes('querySrv'))) {
-      console.error('DNS SRV Resolution Notice: ISP/DNS resolver failed to resolve SRV records.');
-    }
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT} (Database disconnected)`);
-    });
+// Only listen to the port if we are NOT running Jest tests
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
   });
+}
+
+// Export the app for Supertest
+module.exports = app;
