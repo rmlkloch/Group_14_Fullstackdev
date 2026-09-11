@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Board = require('../models/Board');
 const Task = require('../models/Task');
+const { parseSort } = require('../utils/apiFeatures');
 
 const { buildQueryOptions } = require('../services/queryService');
 
@@ -18,8 +19,11 @@ exports.getBoards = async (req, res) => {
       ? { $or: [{ ownerId: userId }, { members: userId }] }
       : {};
 
-    // Get dynamic options from query service
-    const { filter, sortOptions, projection } = buildQueryOptions(req.query);
+// Get dynamic options from query service (teammate's changes)
+    const { filter, projection } = buildQueryOptions(req.query);
+
+    // Apply your API utility for sorting (your changes)
+    const sortOptions = parseSort(req.query?.sortBy, req.query?.order);
 
     // Merge base authentication filter with any dynamic filters passed in the query
     const finalFilter = { ...baseFilter, ...filter };
