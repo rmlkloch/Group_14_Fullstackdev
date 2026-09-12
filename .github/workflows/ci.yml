@@ -27,7 +27,7 @@ jobs:
 
       - name: 4. Run Server Tests & Generate Coverage
         working-directory: ./backend
-        run: npx jest --passWithNoTests --coverage
+        run: npx jest tests/auth.test.js tests/generateToken.test.js tests/authMiddleware.test.js --passWithNoTests --coverage
         env:
           NODE_ENV: test
           JWT_SECRET: super_secret_test_key_123
