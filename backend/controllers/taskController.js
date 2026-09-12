@@ -89,6 +89,12 @@ exports.createTask = async (req, res) => {
     const task = new Task(taskData);
     const createdTask = await task.save();
 
+    // Emit real-time Socket.IO event
+    const io = req.app.get('io');
+    if (io && createdTask.boardId) {
+      io.to(`board:${createdTask.boardId}`).emit('task:created', createdTask);
+    }
+
     return res.status(201).json(createdTask);
   } catch (error) {
     console.error('Error in createTask:', error.message);
@@ -123,6 +129,12 @@ exports.updateTask = async (req, res) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
+    // Emit real-time Socket.IO event
+    const io = req.app.get('io');
+    if (io && updatedTask.boardId) {
+      io.to(`board:${updatedTask.boardId}`).emit('task:updated', updatedTask);
+    }
+
     return res.status(200).json(updatedTask);
   } catch (error) {
     console.error('Error in updateTask:', error.message);
@@ -154,6 +166,12 @@ exports.deleteTask = async (req, res) => {
 
     if (!deletedTask) {
       return res.status(404).json({ message: 'Task not found' });
+    }
+
+    // Emit real-time Socket.IO event
+    const io = req.app.get('io');
+    if (io && deletedTask.boardId) {
+      io.to(`board:${deletedTask.boardId}`).emit('task:deleted', deletedTask);
     }
 
     return res.status(200).json({ message: 'Task removed' });

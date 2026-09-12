@@ -133,6 +133,12 @@ exports.updateBoard = async (req, res) => {
       return res.status(404).json({ message: 'Board not found' });
     }
 
+    // Emit real-time Socket.IO event
+    const io = req.app.get('io');
+    if (io && updatedBoard._id) {
+      io.to(`board:${updatedBoard._id}`).emit('board:updated', updatedBoard);
+    }
+
     return res.status(200).json(updatedBoard);
   } catch (error) {
     console.error('Error in updateBoard:', error.message);
@@ -211,6 +217,12 @@ exports.addColumn = async (req, res) => {
       { new: true, runValidators: true }
     );
 
+    // Emit real-time Socket.IO event
+    const io = req.app.get('io');
+    if (io && updatedBoard._id) {
+      io.to(`board:${updatedBoard._id}`).emit('board:updated', updatedBoard);
+    }
+
     return res.status(201).json(updatedBoard);
   } catch (error) {
     console.error('Error in addColumn:', error.message);
@@ -251,6 +263,12 @@ exports.updateColumn = async (req, res) => {
       return res.status(404).json({ message: 'Board or column not found' });
     }
 
+    // Emit real-time Socket.IO event
+    const io = req.app.get('io');
+    if (io && updatedBoard._id) {
+      io.to(`board:${updatedBoard._id}`).emit('board:updated', updatedBoard);
+    }
+
     return res.status(200).json(updatedBoard);
   } catch (error) {
     console.error('Error in updateColumn:', error.message);
@@ -282,6 +300,12 @@ exports.deleteColumn = async (req, res) => {
 
     if (!updatedBoard) {
       return res.status(404).json({ message: 'Board not found' });
+    }
+
+    // Emit real-time Socket.IO event
+    const io = req.app.get('io');
+    if (io && updatedBoard._id) {
+      io.to(`board:${updatedBoard._id}`).emit('board:updated', updatedBoard);
     }
 
     return res.status(200).json(updatedBoard);
