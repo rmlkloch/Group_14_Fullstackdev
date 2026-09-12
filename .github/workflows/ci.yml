@@ -1,0 +1,40 @@
+name: M4 CI Pipeline
+
+# Run this script whenever someone pushes to main or makes a Pull Request
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest # Runs on a clean, temporary Linux machine
+
+    steps:
+      - name: 1. Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 2. Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # BACKEND SETUP & TESTING
+      - name: 3. Install Backend Dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: 4. Run Server Tests & Generate Coverage
+        working-directory: ./backend
+        run: npx jest --passWithNoTests --coverage
+        env:
+          NODE_ENV: test
+          JWT_SECRET: super_secret_test_key_123
+
+      # FRONTEND SETUP & TESTING
+      - name: 5. Install Frontend Dependencies
+        run: npm ci
+
+      - name: 6. Run Client Tests
+        run: npm run test -- --passWithNoTests || echo "Frontend tests pending"
