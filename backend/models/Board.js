@@ -53,12 +53,13 @@ const boardSchema = new mongoose.Schema(
     ],
     columns: {
       type: [columnSchema],
-      default: [
+      default: () => [
         { title: 'To Do', position: 0, color: '#6366f1' },
         { title: 'Doing', position: 1, color: '#f59e0b' },
         { title: 'Done', position: 2, color: '#10b981' },
       ],
     },
+
   },
   {
     timestamps: true,
