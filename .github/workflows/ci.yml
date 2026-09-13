@@ -27,7 +27,7 @@ jobs:
 
       - name: 4. Run Server Tests & Generate Coverage
         working-directory: ./backend
-        run: npx jest tests/auth.test.js tests/generateToken.test.js tests/authMiddleware.test.js --passWithNoTests --coverage
+        run: npm test
         env:
           NODE_ENV: test
           JWT_SECRET: super_secret_test_key_123
@@ -37,4 +37,4 @@ jobs:
         run: npm ci
 
       - name: 6. Run Client Tests
-        run: npm run test -- --passWithNoTests || echo "Frontend tests pending"
+        run: npm run test
