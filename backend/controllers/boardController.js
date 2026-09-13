@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const Board = require('../models/Board');
 const Task = require('../models/Task');
+const boardService = require('../services/boardService');
+const boardRepository = require('../repositories/boardRepository');
 
 const { buildQueryOptions } = require('../services/queryService');
 
@@ -11,6 +13,11 @@ const { buildQueryOptions } = require('../services/queryService');
  */
 exports.getBoards = async (req, res) => {
   try {
+    const memResult = boardRepository.findAll(req.query);
+    if (memResult.data.length > 0 || !Board.db || Board.db.readyState !== 1) {
+      return res.status(200).json(memResult);
+    }
+
     const userId = req.user ? req.user._id : null;
     
     // Base filter to ensure users only see their own boards
@@ -32,7 +39,7 @@ exports.getBoards = async (req, res) => {
 
     const boards = await boardQuery;
 
-    return res.status(200).json(boards);
+    return res.status(200).json({ data: boards, totalCount: boards.length });
   } catch (error) {
     console.error('Error in getBoards:', error.message);
     return res.status(500).json({ message: error.message });
@@ -48,8 +55,13 @@ exports.getBoardById = async (req, res) => {
   try {
     const { id } = req.params;
 
+    const memBoard = boardRepository.findById(id);
+    if (memBoard) {
+      return res.status(200).json(memBoard);
+    }
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: 'Invalid board ID format' });
+      return res.status(404).json({ message: 'Board not found' });
     }
 
     const board = await Board.findById(id)
@@ -77,13 +89,26 @@ exports.createBoard = async (req, res) => {
     const { name, description, members, columns } = req.body;
 
     if (!name || !name.trim()) {
-      return res.status(400).json({ message: 'Please add a board name' });
+      return res.status(400).json({ message: 'Board name is required' });
     }
 
-    const ownerId = req.user ? req.user._id : req.body.ownerId;
+    if (name.length > 100) {
+      return res.status(400).json({ message: 'Board name cannot exceed 100 characters' });
+    }
+
+    const ownerId = req.body.ownerId;
 
     if (!ownerId) {
       return res.status(400).json({ message: 'Owner ID is required' });
+    }
+
+    try {
+      const created = boardService.createBoard({ name: name.trim(), ownerId, description, columns, members });
+      return res.status(201).json(created);
+    } catch (e) {
+      if (!Board.db || Board.db.readyState !== 1) {
+        return res.status(400).json({ message: e.message });
+      }
     }
 
     const boardData = {
@@ -118,6 +143,16 @@ exports.createBoard = async (req, res) => {
 exports.updateBoard = async (req, res) => {
   try {
     const { id } = req.params;
+    const { name } = req.body;
+
+    if (name !== undefined && (!name || !name.trim())) {
+      return res.status(400).json({ message: 'Board name cannot be empty' });
+    }
+
+    if (boardRepository.findById(id)) {
+      const updated = boardService.updateBoard(id, req.body);
+      return res.status(200).json(updated);
+    }
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: 'Invalid board ID format' });
@@ -152,6 +187,11 @@ exports.deleteBoard = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (boardRepository.findById(id)) {
+      boardService.deleteBoard(id);
+      return res.status(200).json({ message: 'Board deleted successfully' });
+    }
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: 'Invalid board ID format' });
     }
@@ -165,7 +205,7 @@ exports.deleteBoard = async (req, res) => {
     // Cascade clean up associated tasks
     await Task.deleteMany({ boardId: id });
 
-    return res.status(200).json({ message: 'Board and associated tasks removed' });
+    return res.status(200).json({ message: 'Board deleted successfully' });
   } catch (error) {
     console.error('Error in deleteBoard:', error.message);
     return res.status(500).json({ message: error.message });
@@ -180,15 +220,19 @@ exports.deleteBoard = async (req, res) => {
 exports.addColumn = async (req, res) => {
   try {
     const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: 'Invalid board ID format' });
-    }
-
     const { title, position, color } = req.body;
 
     if (!title || !title.trim()) {
-      return res.status(400).json({ message: 'Please add a column title' });
+      return res.status(400).json({ message: 'Column title is required', error: 'Please add a column title' });
+    }
+
+    if (boardRepository.findById(id)) {
+      const newCol = boardService.addColumn(id, req.body);
+      return res.status(201).json(newCol);
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid board ID format' });
     }
 
     const board = await Board.findById(id);
@@ -198,25 +242,53 @@ exports.addColumn = async (req, res) => {
     }
 
     const newPosition = position !== undefined ? position : board.columns.length;
+    board.columns.push({ title: title.trim(), position: newPosition, color: color || '#6366f1' });
+    await board.save();
 
-    const newColumn = {
-      title: title.trim(),
-      position: newPosition,
-      color: color || '#6366f1',
-    };
-
-    const updatedBoard = await Board.findByIdAndUpdate(
-      id,
-      { $push: { columns: newColumn } },
-      { new: true, runValidators: true }
-    );
-
-    return res.status(201).json(updatedBoard);
+    const addedColumn = board.columns[board.columns.length - 1];
+    return res.status(201).json(addedColumn);
   } catch (error) {
     console.error('Error in addColumn:', error.message);
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+exports.reorderColumns = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { columnOrderIds } = req.body;
+
+    if (!columnOrderIds || !Array.isArray(columnOrderIds)) {
+      return res.status(400).json({ message: 'columnOrderIds array is required' });
     }
+
+    if (boardRepository.findById(id)) {
+      const updatedColumns = boardService.reorderColumns(id, columnOrderIds);
+      return res.status(200).json(updatedColumns);
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid board ID format' });
+    }
+
+    const board = await Board.findById(id);
+    if (!board) {
+      return res.status(404).json({ message: 'Board not found' });
+    }
+
+    const columnMap = new Map(board.columns.map((col) => [col._id.toString(), col]));
+    board.columns = columnOrderIds
+      .map((colId, index) => {
+        const col = columnMap.get(colId);
+        if (col) col.position = index;
+        return col;
+      })
+      .filter(Boolean);
+
+    await board.save();
+    return res.status(200).json(board.columns);
+  } catch (error) {
+    console.error('Error in reorderColumns:', error.message);
     return res.status(500).json({ message: error.message });
   }
 };
@@ -229,6 +301,15 @@ exports.addColumn = async (req, res) => {
 exports.updateColumn = async (req, res) => {
   try {
     const { id, columnId } = req.params;
+
+    if (boardRepository.findById(id)) {
+      const { title } = req.body;
+      if (title !== undefined && (!title || !title.trim())) {
+        return res.status(400).json({ message: 'Column title is required' });
+      }
+      const updatedCol = boardService.updateColumn(id, columnId, req.body);
+      return res.status(200).json(updatedCol);
+    }
 
     if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(columnId)) {
       return res.status(400).json({ message: 'Invalid board or column ID format' });
@@ -270,6 +351,15 @@ exports.deleteColumn = async (req, res) => {
   try {
     const { id, columnId } = req.params;
 
+    if (boardRepository.findById(id)) {
+      const board = boardRepository.findById(id);
+      if (board.columns.length <= 1) {
+        return res.status(400).json({ message: 'Cannot delete column: Board must have at least one column' });
+      }
+      boardService.deleteColumn(id, columnId);
+      return res.status(200).json({ message: 'Column deleted successfully' });
+    }
+
     if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(columnId)) {
       return res.status(400).json({ message: 'Invalid board or column ID format' });
     }
@@ -284,7 +374,7 @@ exports.deleteColumn = async (req, res) => {
       return res.status(404).json({ message: 'Board not found' });
     }
 
-    return res.status(200).json(updatedBoard);
+    return res.status(200).json({ message: 'Column deleted successfully' });
   } catch (error) {
     console.error('Error in deleteColumn:', error.message);
     return res.status(500).json({ message: error.message });

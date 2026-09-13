@@ -14,6 +14,7 @@ test('Member 2 — Board & Column Integration & API Tests', async (t) => {
   await t.test('POST /api/boards - creates a board successfully (HTTP 201 Created)', async () => {
     const res = await request(app)
       .post('/api/boards')
+      .set('Authorization', 'Bearer mock-token')
       .send({
         name: 'Sprint Alpha Board',
         ownerId: 'user_owner_1'
@@ -32,6 +33,7 @@ test('Member 2 — Board & Column Integration & API Tests', async (t) => {
   await t.test('POST /api/boards - rejects creation with missing name (HTTP 400 Bad Request)', async () => {
     const res = await request(app)
       .post('/api/boards')
+      .set('Authorization', 'Bearer mock-token')
       .send({ ownerId: 'user_owner_1' })
       .expect(400);
 
@@ -41,6 +43,7 @@ test('Member 2 — Board & Column Integration & API Tests', async (t) => {
   await t.test('POST /api/boards - rejects creation with missing ownerId (HTTP 400 Bad Request)', async () => {
     const res = await request(app)
       .post('/api/boards')
+      .set('Authorization', 'Bearer mock-token')
       .send({ name: 'Valid Board Name' })
       .expect(400);
 
@@ -50,6 +53,7 @@ test('Member 2 — Board & Column Integration & API Tests', async (t) => {
   await t.test('POST /api/boards - rejects board name exceeding 100 chars (HTTP 400 Bad Request)', async () => {
     const res = await request(app)
       .post('/api/boards')
+      .set('Authorization', 'Bearer mock-token')
       .send({
         name: 'B'.repeat(101),
         ownerId: 'user_owner_1'
@@ -65,6 +69,7 @@ test('Member 2 — Board & Column Integration & API Tests', async (t) => {
 
     const res = await request(app)
       .get('/api/boards')
+      .set('Authorization', 'Bearer mock-token')
       .expect(200);
 
     assert.equal(res.body.totalCount, 2);
@@ -77,6 +82,7 @@ test('Member 2 — Board & Column Integration & API Tests', async (t) => {
 
     const res = await request(app)
       .get('/api/boards?ownerId=owner_1')
+      .set('Authorization', 'Bearer mock-token')
       .expect(200);
 
     assert.equal(res.body.totalCount, 1);
@@ -88,6 +94,7 @@ test('Member 2 — Board & Column Integration & API Tests', async (t) => {
 
     const res = await request(app)
       .get(`/api/boards/${created.id}`)
+      .set('Authorization', 'Bearer mock-token')
       .expect(200);
 
     assert.equal(res.body.id, created.id);
@@ -97,6 +104,7 @@ test('Member 2 — Board & Column Integration & API Tests', async (t) => {
   await t.test('GET /api/boards/:id - returns 404 Not Found for missing board ID', async () => {
     const res = await request(app)
       .get('/api/boards/99999')
+      .set('Authorization', 'Bearer mock-token')
       .expect(404);
 
     assert.equal(res.body.message, 'Board not found');
@@ -107,6 +115,7 @@ test('Member 2 — Board & Column Integration & API Tests', async (t) => {
 
     const res = await request(app)
       .patch(`/api/boards/${created.id}`)
+      .set('Authorization', 'Bearer mock-token')
       .send({ name: 'Updated Board Name', description: 'New description' })
       .expect(200);
 
@@ -119,6 +128,7 @@ test('Member 2 — Board & Column Integration & API Tests', async (t) => {
 
     const res = await request(app)
       .patch(`/api/boards/${created.id}`)
+      .set('Authorization', 'Bearer mock-token')
       .send({ name: '   ' })
       .expect(400);
 
@@ -130,12 +140,14 @@ test('Member 2 — Board & Column Integration & API Tests', async (t) => {
 
     const res = await request(app)
       .delete(`/api/boards/${created.id}`)
+      .set('Authorization', 'Bearer mock-token')
       .expect(200);
 
     assert.equal(res.body.message, 'Board deleted successfully');
 
     await request(app)
       .get(`/api/boards/${created.id}`)
+      .set('Authorization', 'Bearer mock-token')
       .expect(404);
   });
 
@@ -144,6 +156,7 @@ test('Member 2 — Board & Column Integration & API Tests', async (t) => {
 
     const res = await request(app)
       .post(`/api/boards/${created.id}/columns`)
+      .set('Authorization', 'Bearer mock-token')
       .send({ title: 'Code Review', color: '#a855f7' })
       .expect(201);
 
@@ -156,6 +169,7 @@ test('Member 2 — Board & Column Integration & API Tests', async (t) => {
 
     const res = await request(app)
       .post(`/api/boards/${created.id}/columns`)
+      .set('Authorization', 'Bearer mock-token')
       .send({ title: '' })
       .expect(400);
 
@@ -168,6 +182,7 @@ test('Member 2 — Board & Column Integration & API Tests', async (t) => {
 
     const res = await request(app)
       .patch(`/api/boards/${created.id}/columns/${colId}`)
+      .set('Authorization', 'Bearer mock-token')
       .send({ title: 'Upcoming Tasks', color: '#06b6d4' })
       .expect(200);
 
@@ -181,6 +196,7 @@ test('Member 2 — Board & Column Integration & API Tests', async (t) => {
 
     const res = await request(app)
       .delete(`/api/boards/${created.id}/columns/${colId}`)
+      .set('Authorization', 'Bearer mock-token')
       .expect(200);
 
     assert.equal(res.body.message, 'Column deleted successfully');
@@ -196,6 +212,7 @@ test('Member 2 — Board & Column Integration & API Tests', async (t) => {
 
     const res = await request(app)
       .delete(`/api/boards/${created.id}/columns/${colId}`)
+      .set('Authorization', 'Bearer mock-token')
       .expect(400);
 
     assert.equal(res.body.message, 'Cannot delete column: Board must have at least one column');
@@ -207,6 +224,7 @@ test('Member 2 — Board & Column Integration & API Tests', async (t) => {
 
     const res = await request(app)
       .put(`/api/boards/${created.id}/columns/reorder`)
+      .set('Authorization', 'Bearer mock-token')
       .send({ columnOrderIds: [c3.id, c1.id, c2.id] })
       .expect(200);
 

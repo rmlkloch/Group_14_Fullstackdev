@@ -24,20 +24,31 @@ export default function useTasks() {
             setError('');
             const data = await getTasks();
 
+            let fetchedList = [];
             if (Array.isArray(data)) {
-                setTasks(data);
+                fetchedList = data;
             } else if (Array.isArray(data?.tasks)) {
-                setTasks(data.tasks);
-            } else {
-                setTasks([]);
+                fetchedList = data.tasks;
             }
+
+            setTasks(fetchedList);
+            localStorage.setItem('syncboard_tasks', JSON.stringify(fetchedList));
         } catch (err) {
             console.error('Error loading tasks:', err);
             setError(
                 err.response?.data?.message ||
-                'Unable to load tasks from server. Please check backend connection.'
+                'Unable to load tasks from server. Showing local cache.'
             );
-            setTasks([]);
+            const cached = localStorage.getItem('syncboard_tasks');
+            if (cached) {
+                try {
+                    setTasks(JSON.parse(cached));
+                } catch (e) {
+                    setTasks([]);
+                }
+            } else {
+                setTasks([]);
+            }
         } finally {
             setLoading(false);
         }

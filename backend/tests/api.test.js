@@ -1,27 +1,47 @@
-// backend/tests/concurrency.test.js
 const request = require('supertest');
-const app = require('../app'); // Your Express app
+const mongoose = require('mongoose');
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const app = require('../app');
+const Task = require('../models/Task');
+
+let mongoServer;
+
+beforeAll(async () => {
+  mongoServer = await MongoMemoryServer.create();
+  const mongoUri = mongoServer.getUri();
+  await mongoose.connect(mongoUri);
+});
+
+afterAll(async () => {
+  await mongoose.disconnect();
+  await mongoServer.stop();
+});
 
 describe('Member 5 - Validation & Concurrency Tests', () => {
   it('should return 400 for invalid ObjectId format', async () => {
-    const res = await request(app).get('/api/tasks/invalid-id-format');
+    const res = await request(app)
+      .get('/api/tasks/invalid-id-format')
+      .set('Authorization', 'Bearer mock-token');
+      
     expect(res.statusCode).toBe(400);
     expect(res.body.error).toBe('Invalid ID Format');
   });
 
   it('should detect version conflicts and return 409 Conflict', async () => {
-    // 1. Assume a task exists with version 0
-    const taskId = '60d5ecb8b5c9c22b8c8b4567';
+    const task = await Task.create({
+      title: 'Original Title',
+      status: 'todo',
+      boardId: new mongoose.Types.ObjectId(),
+      version: 1
+    });
 
-    // 2. Simulate stale edit with baseVersion = -1
     const res = await request(app)
-      .put(`/api/tasks/${taskId}`)
+      .put(`/api/tasks/${task._id}`)
+      .set('Authorization', 'Bearer mock-token')
       .send({ title: 'Updated Title', baseVersion: -1 });
 
-    if (res.statusCode === 409) {
-      expect(res.statusCode).toBe(409);
-      expect(res.body.error).toBe('Conflict');
-      expect(res.body).toHaveProperty('currentTask');
-    }
+    expect(res.statusCode).toBe(409);
+    expect(res.body.error).toBe('Conflict');
+    expect(res.body).toHaveProperty('currentTask');
   });
 });

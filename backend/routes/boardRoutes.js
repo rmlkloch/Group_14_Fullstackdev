@@ -9,6 +9,7 @@ const {
   addColumn,
   updateColumn,
   deleteColumn,
+  reorderColumns,
   getBoardAnalytics,
 } = require('../controllers/boardController');
 const { protect } = require('../middleware/authMiddleware');
@@ -32,6 +33,10 @@ router
   .get(protect, getBoardAnalytics);
 
 // Embedded Column operations routes
+router
+  .route('/:id/columns/reorder')
+  .put(protect, reorderColumns);
+
 router
   .route('/:id/columns')
   .post(protect, addColumn);

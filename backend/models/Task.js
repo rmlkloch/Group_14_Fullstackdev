@@ -25,7 +25,7 @@ const taskSchema = new mongoose.Schema(
     priority: {
       type: String,
       enum: {
-        values: ['Low', 'Medium', 'High'],
+        values: ['Low', 'Medium', 'High', 'low', 'medium', 'high'],
         message: '{VALUE} is not a valid priority level',
       },
       default: 'Medium',

@@ -14,6 +14,7 @@ export default function TaskCard({
   const [isDragging, setIsDragging] = useState(false);
 
   // Destructure task properties with fallbacks
+  const taskId = task?.id || task?._id;
   const { 
     title = 'Untitled Task', 
     description = '',
@@ -39,7 +40,7 @@ export default function TaskCard({
 
   const handleDragStart = (e) => {
     setIsDragging(true);
-    e.dataTransfer.setData('text/plain', String(id));
+    e.dataTransfer.setData('text/plain', String(taskId));
     e.dataTransfer.effectAllowed = 'move';
   };
 
@@ -90,7 +91,7 @@ export default function TaskCard({
               style={{ color: 'var(--text-secondary)' }}
               onClick={(e) => {
                 e.stopPropagation();
-                if (onDelete) onDelete(id);
+                if (onDelete) onDelete(taskId);
               }}
               title="Delete task"
               aria-label="Delete task"
@@ -107,7 +108,7 @@ export default function TaskCard({
                   className="arrow-btn"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (canMoveLeft && onMoveLeft) onMoveLeft(id);
+                    if (canMoveLeft && onMoveLeft) onMoveLeft(taskId);
                   }}
                   disabled={!canMoveLeft}
                   title="Move left"
@@ -121,7 +122,7 @@ export default function TaskCard({
                   className="arrow-btn"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (canMoveRight && onMoveRight) onMoveRight(id);
+                    if (canMoveRight && onMoveRight) onMoveRight(taskId);
                   }}
                   disabled={!canMoveRight}
                   title="Move right"

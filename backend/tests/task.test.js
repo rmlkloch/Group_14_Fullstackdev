@@ -26,11 +26,13 @@ describe('Member 3 - Task API Integration Tests', () => {
     const newTask = {
       title: 'Test Task for M4',
       status: 'todo',
-      priority: 'high'
+      priority: 'high',
+      boardId: new mongoose.Types.ObjectId()
     };
 
     const res = await request(app)
       .post('/api/tasks')
+      .set('Authorization', 'Bearer mock-token')
       .send(newTask);
 
     expect(res.statusCode).toBe(201);
@@ -42,15 +44,22 @@ describe('Member 3 - Task API Integration Tests', () => {
 
     const res = await request(app)
       .post('/api/tasks')
+      .set('Authorization', 'Bearer mock-token')
       .send(invalidTask);
 
     expect(res.statusCode).toBe(400);
   });
 
   it('should delete an existing task', async () => {
-    const task = await Task.create({ title: 'Task to Delete', status: 'todo' });
+    const task = await Task.create({
+      title: 'Task to Delete',
+      status: 'todo',
+      boardId: new mongoose.Types.ObjectId()
+    });
 
-    const res = await request(app).delete(`/api/tasks/${task._id}`);
+    const res = await request(app)
+      .delete(`/api/tasks/${task._id}`)
+      .set('Authorization', 'Bearer mock-token');
 
     expect(res.statusCode).toBe(200);
     const deletedTask = await Task.findById(task._id);

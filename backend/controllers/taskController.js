@@ -51,7 +51,7 @@ exports.getTaskById = async (req, res) => {
 
     // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: 'Invalid task ID format' });
+      return res.status(400).json({ message: 'Invalid task ID format', error: 'Invalid ID Format' });
     }
 
     const task = await Task.findById(id);
@@ -119,12 +119,21 @@ exports.updateTask = async (req, res) => {
 
     // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: 'Invalid task ID format' });
+      return res.status(400).json({ message: 'Invalid task ID format', error: 'Invalid ID Format' });
+    }
+
+    const { baseVersion, ...updateData } = req.body;
+
+    if (baseVersion !== undefined) {
+      const existingTask = await Task.findById(id);
+      if (existingTask && existingTask.version !== undefined && existingTask.version !== baseVersion) {
+        return res.status(409).json({ error: 'Conflict', message: 'Task version conflict', currentTask: existingTask });
+      }
     }
 
     const updatedTask = await Task.findByIdAndUpdate(
       id,
-      { $set: req.body },
+      { $set: updateData },
       { new: true, runValidators: true }
     );
 
@@ -165,7 +174,7 @@ exports.deleteTask = async (req, res) => {
 
     // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: 'Invalid task ID format' });
+      return res.status(400).json({ message: 'Invalid task ID format', error: 'Invalid ID Format' });
     }
 
     const deletedTask = await Task.findByIdAndDelete(id);
