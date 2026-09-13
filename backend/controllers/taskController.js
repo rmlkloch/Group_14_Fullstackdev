@@ -1,5 +1,11 @@
 const mongoose = require('mongoose');
 const Task = require('../models/Task');
+const {
+  parseFilter,
+  parseSort,
+  parsePagination,
+  isValidPaginationParam,
+} = require('../utils/apiFeatures');
 
 const { buildQueryOptions } = require('../services/queryService');
 
@@ -10,7 +16,24 @@ const { buildQueryOptions } = require('../services/queryService');
  */
 exports.getTasks = async (req, res) => {
   try {
-    const { filter, sortOptions, projection, page, limit, skip } = buildQueryOptions(req.query);
+// 0. Validate pagination parameters if explicitly provided (Your changes)
+    if (
+      !isValidPaginationParam(req.query?.page) ||
+      !isValidPaginationParam(req.query?.limit)
+    ) {
+      return res
+        .status(400)
+        .json({ message: 'Invalid pagination parameters: page and limit must be positive integers' });
+    }
+
+    // 1. Parse filter, sort, and pagination using your tested M4 API utility
+    const allowedFields = ['boardId', 'status', 'assignee', 'priority'];
+    const filter = parseFilter(req.query, allowedFields);
+    const sortOptions = parseSort(req.query.sortBy, req.query.order);
+    const { page, limit, skip } = parsePagination(req.query.page, req.query.limit);
+
+    // 2. Get dynamic projection from teammate's query service
+    const { projection } = buildQueryOptions(req.query);
 
     // Query total count for pagination metadata using the dynamically built filter
     const totalTasks = await Task.countDocuments(filter);
@@ -22,7 +45,7 @@ exports.getTasks = async (req, res) => {
       .skip(skip)
       .limit(limit);
 
-    if (projection) {
+if (projection) {
       taskQuery = taskQuery.select(projection);
     }
 
