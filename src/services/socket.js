@@ -2,7 +2,7 @@
 import { io } from 'socket.io-client';
 import tokenService from './tokenService';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 let socket = null;
 
@@ -31,6 +31,7 @@ export const initSocket = (customToken = null) => {
     auth: {
       token: token
     },
+    secure: SOCKET_URL.startsWith('https'),
     transports: ['websocket', 'polling'],
     reconnection: true,
     reconnectionAttempts: 10,
