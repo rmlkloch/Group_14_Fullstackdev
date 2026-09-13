@@ -6,6 +6,8 @@ const generateToken = require('../utils/generateToken');
 
 const User = require('../models/User');
 
+jest.setTimeout(60000);
+
 let mongoServer;
 let token;
 

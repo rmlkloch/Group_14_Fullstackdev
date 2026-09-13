@@ -1,5 +1,6 @@
 module.exports = {
   testEnvironment: 'node',
+  testTimeout: 60000,
   testMatch: [
     '**/tests/auth.test.js',
     '**/tests/generateToken.test.js',

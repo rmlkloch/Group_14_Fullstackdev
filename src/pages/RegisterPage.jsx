@@ -37,13 +37,19 @@ export default function RegisterPage({ onRegisterSuccess, onSwitchToLogin }) {
 
     try {
       // Connect to POST /api/auth/register endpoint
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/auth/register`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5002'}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type');
+      let data = {};
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        throw new Error(`Server returned non-JSON response (${response.status}). Make sure the backend container is running.`);
+      }
 
       if (!response.ok) {
         throw new Error(data.message || 'Registration failed.');
@@ -65,7 +71,7 @@ export default function RegisterPage({ onRegisterSuccess, onSwitchToLogin }) {
 
         {error && <div style={styles.errorAlert}>{error}</div>}
 
-        <form onSubmit={handleSubmit} style={styles.form}>
+        <form onSubmit={handleSubmit} noValidate style={styles.form}>
           <div style={styles.inputGroup}>
             <label style={styles.label}>Full Name</label>
             <input type="text" placeholder="John Doe" value={name} onChange={(e) => setName(e.target.value)} style={styles.input} />

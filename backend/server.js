@@ -21,7 +21,7 @@ if (process.env.NODE_ENV !== 'test') {
   connectDB();
 }
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5002;
 
 // ==========================================
 // M5: SOCKET.IO REAL-TIME ARCHITECTURE

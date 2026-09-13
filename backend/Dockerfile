@@ -16,7 +16,7 @@ RUN npm ci --only=production || npm install --production
 COPY . .
 
 # Expose backend API and Socket.IO port
-EXPOSE 5000
+EXPOSE 5002
 
 # Set production environment default
 ENV NODE_ENV=production

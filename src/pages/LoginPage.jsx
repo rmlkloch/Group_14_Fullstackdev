@@ -23,13 +23,20 @@ export default function LoginPage({ onLoginSuccess, onSwitchToRegister }) {
     setLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/auth/login`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5002'}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type');
+      let data = {};
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(`Server returned non-JSON response (${response.status}). Make sure the backend container is running.`);
+      }
 
       if (!response.ok) {
         throw new Error(data.message || 'Invalid email or password.');
@@ -81,7 +88,7 @@ export default function LoginPage({ onLoginSuccess, onSwitchToRegister }) {
 
         {error && <div style={styles.errorAlert}>{error}</div>}
 
-        <form onSubmit={handleSubmit} style={styles.form}>
+        <form onSubmit={handleSubmit} noValidate style={styles.form}>
           <div style={styles.inputGroup}>
             <label style={styles.label}>Email Address</label>
             <input
