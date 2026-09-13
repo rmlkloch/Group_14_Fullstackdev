@@ -114,7 +114,7 @@ exports.createTask = async (req, res) => {
 
     // Emit real-time Socket.IO event
     const io = req.app.get('io');
-    if (io) {
+if (io) {
       if (createdTask.boardId) {
         io.to(`board:${createdTask.boardId}`).emit('task:created', createdTask);
       }
@@ -157,7 +157,7 @@ exports.updateTask = async (req, res) => {
 
     // Emit real-time Socket.IO event
     const io = req.app.get('io');
-    if (io) {
+if (io) {
       if (updatedTask.boardId) {
         io.to(`board:${updatedTask.boardId}`).emit('task:updated', updatedTask);
       }
@@ -199,7 +199,7 @@ exports.deleteTask = async (req, res) => {
 
     // Emit real-time Socket.IO event
     const io = req.app.get('io');
-    if (io) {
+if (io) {
       if (deletedTask.boardId) {
         io.to(`board:${deletedTask.boardId}`).emit('task:deleted', deletedTask);
       }
