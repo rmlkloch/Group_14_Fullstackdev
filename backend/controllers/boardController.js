@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Board = require('../models/Board');
 const Task = require('../models/Task');
+const { parseSort } = require('../utils/apiFeatures');
 
 const { buildQueryOptions } = require('../services/queryService');
 
@@ -18,8 +19,11 @@ exports.getBoards = async (req, res) => {
       ? { $or: [{ ownerId: userId }, { members: userId }] }
       : {};
 
-    // Get dynamic options from query service
-    const { filter, sortOptions, projection } = buildQueryOptions(req.query);
+// Get dynamic options from query service (teammate's changes)
+    const { filter, projection } = buildQueryOptions(req.query);
+
+    // Apply your API utility for sorting (your changes)
+    const sortOptions = parseSort(req.query?.sortBy, req.query?.order);
 
     // Merge base authentication filter with any dynamic filters passed in the query
     const finalFilter = { ...baseFilter, ...filter };
@@ -133,6 +137,12 @@ exports.updateBoard = async (req, res) => {
       return res.status(404).json({ message: 'Board not found' });
     }
 
+    // Emit real-time Socket.IO event
+    const io = req.app.get('io');
+    if (io && updatedBoard._id) {
+      io.to(`board:${updatedBoard._id}`).emit('board:updated', updatedBoard);
+    }
+
     return res.status(200).json(updatedBoard);
   } catch (error) {
     console.error('Error in updateBoard:', error.message);
@@ -211,6 +221,12 @@ exports.addColumn = async (req, res) => {
       { new: true, runValidators: true }
     );
 
+    // Emit real-time Socket.IO event
+    const io = req.app.get('io');
+    if (io && updatedBoard._id) {
+      io.to(`board:${updatedBoard._id}`).emit('board:updated', updatedBoard);
+    }
+
     return res.status(201).json(updatedBoard);
   } catch (error) {
     console.error('Error in addColumn:', error.message);
@@ -251,6 +267,12 @@ exports.updateColumn = async (req, res) => {
       return res.status(404).json({ message: 'Board or column not found' });
     }
 
+    // Emit real-time Socket.IO event
+    const io = req.app.get('io');
+    if (io && updatedBoard._id) {
+      io.to(`board:${updatedBoard._id}`).emit('board:updated', updatedBoard);
+    }
+
     return res.status(200).json(updatedBoard);
   } catch (error) {
     console.error('Error in updateColumn:', error.message);
@@ -282,6 +304,12 @@ exports.deleteColumn = async (req, res) => {
 
     if (!updatedBoard) {
       return res.status(404).json({ message: 'Board not found' });
+    }
+
+    // Emit real-time Socket.IO event
+    const io = req.app.get('io');
+    if (io && updatedBoard._id) {
+      io.to(`board:${updatedBoard._id}`).emit('board:updated', updatedBoard);
     }
 
     return res.status(200).json(updatedBoard);

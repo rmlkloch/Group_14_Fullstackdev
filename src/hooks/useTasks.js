@@ -5,16 +5,18 @@ import {
     updateTask,
     deleteTask
 } from '../services/taskService';
+import { getSocket, initSocket } from '../services/socket';
 
 /**
- * Custom hook for task management connected to REST API
- * Handles loading, server error, and 409 Conflict optimistic concurrency states
+ * Custom hook for task management connected to REST API & real-time Socket.IO sync
+ * Handles loading, server error, 409 Conflict optimistic concurrency, and live multi-user sync
  */
 export default function useTasks() {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [conflictError, setConflictError] = useState(null);
+    const [isSocketConnected, setIsSocketConnected] = useState(false);
 
     const fetchTasks = useCallback(async () => {
         try {
@@ -43,6 +45,73 @@ export default function useTasks() {
 
     useEffect(() => {
         fetchTasks();
+    }, [fetchTasks]);
+
+    // ==========================================
+    // M5: REAL-TIME SOCKET.IO EVENT LISTENERS
+    // ==========================================
+    useEffect(() => {
+        const socket = initSocket() || getSocket();
+        if (!socket) return;
+
+        const onConnect = () => setIsSocketConnected(true);
+        const onDisconnect = () => setIsSocketConnected(false);
+
+        const onTaskCreated = (newTask) => {
+            if (!newTask) return;
+            setTasks((prev) => {
+                const exists = prev.some(
+                    (t) => String(t.id || t._id) === String(newTask.id || newTask._id)
+                );
+                if (exists) return prev;
+                return [...prev, newTask];
+            });
+        };
+
+        const onTaskUpdated = (updatedTask) => {
+            if (!updatedTask) return;
+            setTasks((prev) =>
+                prev.map((t) =>
+                    String(t.id || t._id) === String(updatedTask.id || updatedTask._id)
+                        ? { ...t, ...updatedTask }
+                        : t
+                )
+            );
+        };
+
+        const onTaskDeleted = (deletedTask) => {
+            if (!deletedTask) return;
+            const targetId = typeof deletedTask === 'object'
+                ? (deletedTask.id || deletedTask._id)
+                : deletedTask;
+
+            setTasks((prev) =>
+                prev.filter((t) => String(t.id || t._id) !== String(targetId))
+            );
+        };
+
+        const onBoardUpdated = () => {
+            // Re-fetch tasks silently when board-level changes occur
+            fetchTasks();
+        };
+
+        setIsSocketConnected(Boolean(socket.connected));
+
+        socket.on('connect', onConnect);
+        socket.on('disconnect', onDisconnect);
+        socket.on('task:created', onTaskCreated);
+        socket.on('task:updated', onTaskUpdated);
+        socket.on('task:deleted', onTaskDeleted);
+        socket.on('board:updated', onBoardUpdated);
+
+        return () => {
+            socket.off('connect', onConnect);
+            socket.off('disconnect', onDisconnect);
+            socket.off('task:created', onTaskCreated);
+            socket.off('task:updated', onTaskUpdated);
+            socket.off('task:deleted', onTaskDeleted);
+            socket.off('board:updated', onBoardUpdated);
+        };
     }, [fetchTasks]);
 
     const addTask = async (newTaskData) => {
@@ -145,6 +214,7 @@ export default function useTasks() {
         loading,
         error,
         conflictError,
+        isSocketConnected,
         fetchTasks,
         addTask,
         editTask,

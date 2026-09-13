@@ -1,0 +1,70 @@
+# ==========================================================
+# Milestone 05 - Member 5: Docker Compose Orchestration
+# SyncBoard: MongoDB + Express/Socket.IO Backend + Nginx Frontend
+# ==========================================================
+version: '3.8'
+
+services:
+  # --------------------------------------------------------
+  # 1. MongoDB Database Service
+  # --------------------------------------------------------
+  mongodb:
+    image: mongo:7.0
+    container_name: syncboard-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=syncboard
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --eval 'db.runCommand(\"ping\").ok' --quiet || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # --------------------------------------------------------
+  # 2. Express API & Socket.IO Real-Time Backend Service
+  # --------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: syncboard-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - MONGO_URI=mongodb://mongodb:27017/syncboard
+      - MONGODB_URI=mongodb://mongodb:27017/syncboard
+      - JWT_SECRET=syncboard_jwt_secret_key_production_m5
+      - JWT_EXPIRE=30d
+      - CLIENT_ORIGIN=*
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  # --------------------------------------------------------
+  # 3. Frontend React SPA + Nginx Reverse Proxy Web Server
+  # --------------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=/api
+    container_name: syncboard-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+# Persistent Volume Definitions
+volumes:
+  mongodb-data:
+    driver: local

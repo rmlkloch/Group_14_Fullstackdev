@@ -49,3 +49,7 @@ Thumbs.db
 coverage/
 *.lcov
 .nyc_output/
+
+# Project documentation drafts
+M4.md
+

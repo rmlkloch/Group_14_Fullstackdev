@@ -8,13 +8,13 @@ export default function TaskCard({
   onMoveLeft,
   onMoveRight,
   onDelete,
+  onEdit,
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
   // Destructure task properties with fallbacks
   const { 
-    id, 
     title = 'Untitled Task', 
     description = '',
     tag = 'General', 
@@ -22,12 +22,14 @@ export default function TaskCard({
     dueDate = '',
     column 
   } = task || {};
+  const id = task?.id || task?._id;
   
   const tagClass = `tag-${tag.toLowerCase()}`;
   const isDone = column === 'Done';
 
   const handleCardClick = () => {
     setIsModalOpen(true);
+    if (onEdit) onEdit(task);
   };
 
   const closeModal = (e) => {
@@ -184,7 +186,8 @@ export default function TaskCard({
 
 TaskCard.propTypes = {
   task: PropTypes.shape({
-    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    _id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     title: PropTypes.string.isRequired,
     description: PropTypes.string,
     tag: PropTypes.string,
@@ -197,4 +200,5 @@ TaskCard.propTypes = {
   onMoveLeft: PropTypes.func,
   onMoveRight: PropTypes.func,
   onDelete: PropTypes.func,
+  onEdit: PropTypes.func,
 };
