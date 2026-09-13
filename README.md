@@ -1,15 +1,47 @@
-# 📋 SyncBoard — Fullstack Task Management Application
+# 📋 SyncBoard — Fullstack Kanban Task Management Application
 
-A modern, collaborative Kanban Task Management web application built with **React**, **Vite**, **Express**, **MongoDB**, and **JWT Authentication**. Designed for agile team workflow tracking, task categorization, and protected authorization across multiple development milestones.
+> **Group 14 | Full Stack Web Development**
+> A collaboratively built, progressively developed full-stack web application.
+
+[![CI Pipeline](https://github.com/Genzheta/Group_14_Fullstackdev/actions/workflows/ci.yml/badge.svg)](https://github.com/Genzheta/Group_14_Fullstackdev/actions/workflows/ci.yml)
+
+---
+
+## 📚 Table of Contents
+
+1. [Project Overview](#1-project-overview)
+2. [Technologies Used](#2-technologies-used)
+3. [How to Run](#3-how-to-run)
+   - [Option A — Docker (Recommended)](#option-a--docker-compose-recommended-easiest)
+   - [Option B — Local Manual Setup](#option-b--local-manual-setup)
+   - [Option C — Run Tests Only](#option-c--run-tests-only)
+4. [Project Structure](#4-complete-project-structure)
+5. [API Endpoints](#5-api-endpoints)
+6. [Milestone Summary](#6-milestone-progress-complete-summary)
+7. [Team Members](#7-team-members--allocations)
+8. [Project Plans](#8-project-plans)
 
 ---
 
 ## 1. Project Overview
 
-* **Project Name**: SyncBoard (Kanban Flow)
-* **Description**: SyncBoard is an interactive, fullstack Kanban-style task management web application designed to help agile software engineering teams organize, track, and manage project workflows efficiently.
-* **Purpose**: Provides a central dashboard for team members to create tasks, organize them across status columns (*To Do*, *Doing*, *Done*), assign priorities, and restrict board access using secure authentication and role-based permissions.
-* **Main Problem Solved**: Eliminates disorganized task tracking and insecure workflow access by providing a real-time, responsive Kanban board protected by JWT authentication, role guards, and structured REST API endpoints backed by a layered Express architecture and MongoDB persistence.
+**SyncBoard** is a real-time, collaborative Kanban task management web application built with a full-stack architecture across five progressive milestones. It allows agile teams to create boards, manage tasks across status columns (*To Do*, *Doing*, *Done*), and collaborate with live updates — all secured behind JWT authentication and role-based access control.
+
+- **Application**: SyncBoard (Kanban Flow)
+- **Stack**: React + Vite (Frontend) | Express.js + Node.js (Backend) | MongoDB + Mongoose (Database) | Socket.io (Real-Time) | Docker (DevOps)
+- **Repository**: [github.com/Genzheta/Group_14_Fullstackdev](https://github.com/Genzheta/Group_14_Fullstackdev)
+
+**Key features built:**
+- 🗂️ Kanban board with drag-and-drop task management
+- 🔐 JWT authentication (register, login, protected routes)
+- 👑 Role-based access control (admin vs member)
+- ⚡ Real-time updates via Socket.io (task moves broadcast live to all connected clients)
+- 🔁 Concurrent edit detection — `HTTP 409 Conflict` returned on version mismatch
+- 💾 Client-side persistence (localStorage) for tokens and draft task data
+- 🧪 Automated test suite (28 frontend + 107 backend tests)
+- 🚀 CI/CD with GitHub Actions + Docker Compose deployment
+
+A progressively built full-stack Kanban application — developed milestone-by-milestone as part of the Group 14 Full Stack Web Development project.
 
 ---
 
@@ -18,36 +50,46 @@ A modern, collaborative Kanban Task Management web application built with **Reac
 * 🎯 **Streamlined Task Management**: Intuitive visual Kanban columns with smooth drag/drop and action triggers for task status transitions.
 * 🔐 **Robust Security & Auth**: Full JWT authentication pipeline, password hashing with Bcrypt, and frontend route protection to prevent unauthorized access.
 * 🛡️ **Role-Based Access Control (RBAC)**: Differentiated permissions (`admin` vs `member`) for board management and restricted administrative actions.
-* ⚡ **Seamless Integration & Layered Backend**: Clean separation of frontend service layers and backend layered architecture (Controllers, Services, Repositories, Middleware) with centralized error handling and rate limiting.
+* ⚡ **Real-Time Collaboration**: Socket.io keeps all connected clients in sync — task moves, creates, and deletes are broadcast live.
+* 🔁 **Concurrent Edit Safety**: Mongoose `__v` version key detects conflicting simultaneous edits and returns `HTTP 409 Conflict`.
 
 ---
 
 ## 3. Technologies Used
 
 ### Frontend
-* **Core Library**: React 18.3.1
-* **Build Tool & Server**: Vite 5.3.4
-* **Routing**: React Router DOM 7.18.3
-* **HTTP Client**: Axios 1.20.0 & Custom Fetch Service Layer (`apiClient.js`, `api.js`)
-* **Validation**: Zod 4.5.4 & Prop-Types 15.8.1
-* **State & Auth**: React Context API (`AuthContext`), LocalStorage Persistence
-* **Styling**: Vanilla CSS3 (Custom Glassmorphism design tokens, Flexbox & Grid layouts)
+| Technology | Version | Purpose |
+|---|---|---|
+| React | 18.3.1 | UI component library |
+| Vite | 5.3.4 | Build tool & dev server |
+| React Router DOM | 7.18.3 | Client-side routing |
+| Axios | 1.20.0 | HTTP client with interceptors |
+| Zod | 4.5.4 | Schema validation |
+| Socket.io-client | — | Real-time WebSocket connection |
+| Vitest + RTL | — | Frontend unit testing |
+| MSW | 2.x | API mocking for tests |
 
 ### Backend
-* **Runtime**: Node.js
-* **Framework**: Express.js 5.2.1
-* **API Architecture**: RESTful Layered Architecture (Controllers -> Services -> Repositories -> Models)
-* **Authentication & Security**: JSON Web Tokens (`jsonwebtoken` 9.0.3), Bcrypt Password Hashing (`bcryptjs` 3.0.3), Rate Limiting (`express-rate-limit` 8.7.0), CORS 2.8.6
-* **Environment Config**: Dotenv 17.4.2
+| Technology | Version | Purpose |
+|---|---|---|
+| Node.js | ≥18 | Server runtime |
+| Express.js | 5.2.1 | Web framework (REST API) |
+| MongoDB | — | NoSQL database |
+| Mongoose | 9.9.4 | MongoDB ODM |
+| jsonwebtoken | 9.0.3 | JWT auth tokens |
+| bcryptjs | 3.0.3 | Password hashing |
+| Socket.io | — | Real-time WebSocket server |
+| express-rate-limit | 8.7.0 | API rate limiting |
+| Jest + Supertest | — | Backend testing |
 
-### Database
-* **Database**: MongoDB / Mongoose ODM 9.9.4
-* **Connection Logic**: Multi-strategy connection with SRV Atlas support, direct replica set fallback, local MongoDB fallback, and Google DNS fallback (`8.8.8.8`).
-
-### Development Tools
-* **Version Control**: Git & GitHub (Feature branch workflow)
-* **API Testing**: Postman Collection (`backend/docs/SyncBoard_API.postman_collection.json`) & Integrated Frontend Auth Testing Toolbar
-* **IDE**: VS Code / Antigravity IDE
+### DevOps & Tools
+| Technology | Purpose |
+|---|---|
+| Docker + Docker Compose | Container orchestration |
+| Nginx | Frontend static server + reverse proxy |
+| GitHub Actions | Automated CI/CD pipeline |
+| Git (Feature Branch Workflow) | Version control |
+| Postman | API testing (`backend/docs/SyncBoard_API.postman_collection.json`) |
 
 ---
 
@@ -167,70 +209,153 @@ backend/
 
 ---
 
-# 6. Installation & Setup
+# 6. How to Run
 
-## 6.1 Prerequisites
-* **Node.js**: v18.0.0 or higher
-* **npm**: v9.0.0 or higher
-* **Git**: Installed on local system
-* **MongoDB**: Local instance or MongoDB Atlas account
+> **Prerequisite tools**: [Git](https://git-scm.com/), [Node.js v18+](https://nodejs.org/), [npm v9+](https://www.npmjs.com/)
 
-## 6.2 Clone Repository
+### Step 0 — Clone the Repository
+
 ```bash
 git clone https://github.com/Genzheta/Group_14_Fullstackdev.git
-cd Group_14_Fullstackdev-upload
+cd Group_14_Fullstackdev
 ```
 
-## 6.3 Setup & Run Backend
+---
 
-1. Navigate to the `backend` directory:
-   ```bash
-   cd backend
-   ```
+### ⭐ Option A — Docker Compose (Recommended — Easiest)
 
-2. Install backend dependencies:
-   ```bash
-   npm install
-   ```
+> **Additional requirement**: [Docker Desktop](https://www.docker.com/products/docker-desktop/) must be installed and running.
 
-3. Create `.env` file in `backend/` (refer to `backend/.env.example`):
-   ```env
-   PORT=5000
-   MONGO_URI=mongodb://127.0.0.1:27017/syncboard
-   JWT_SECRET=your_jwt_secret_key_here
-   JWT_EXPIRE=30d
-   ```
+This single command starts **MongoDB**, the **Express backend**, and the **React frontend** (served via Nginx) all at once. No manual environment setup needed.
 
-4. Start the backend server:
-   ```bash
-   # Development mode with nodemon
-   npm run dev
+```bash
+# From the project root directory:
+docker compose up --build
+```
 
-   # Production mode
-   npm start
-   ```
+| Service | URL |
+|---|---|
+| 🌐 Frontend (React via Nginx) | http://localhost:80 |
+| ⚙️  Backend API | http://localhost:5000 |
+| 🗄️  MongoDB | mongodb://localhost:27017 |
 
-## 6.4 Setup & Run Frontend
+To stop all services:
+```bash
+docker compose down
+```
 
-1. From the project root (`Group_14_Fullstackdev-upload`):
-   ```bash
-   npm install
-   ```
+To stop and remove all data volumes:
+```bash
+docker compose down -v
+```
 
-2. Start Vite development server:
-   ```bash
-   npm run dev
-   ```
+---
 
-3. Build production bundle:
-   ```bash
-   npm run build
-   ```
+### 🔧 Option B — Local Manual Setup
 
-4. Preview production build locally:
-   ```bash
-   npm run preview
-   ```
+Run the backend and frontend separately in development mode.
+
+#### Step 1 — Setup & Start the Backend
+
+```bash
+# Navigate to the backend folder
+cd backend
+
+# Install backend dependencies
+npm install
+
+# Create your environment file (copy from the template)
+cp .env.example .env
+```
+
+Edit `backend/.env` and fill in your values:
+```env
+PORT=5000
+MONGO_URI=mongodb://127.0.0.1:27017/syncboard
+JWT_SECRET=your_secret_key_here
+JWT_EXPIRE=30d
+```
+
+> **MongoDB**: You need a running MongoDB instance. Either:
+> - Install [MongoDB Community](https://www.mongodb.com/try/download/community) locally, **or**
+> - Use a free [MongoDB Atlas](https://www.mongodb.com/atlas/database) cluster and paste your Atlas SRV connection string as `MONGO_URI`.
+
+```bash
+# Start the backend development server (with nodemon auto-reload)
+npm run dev
+```
+
+The backend will start at **http://localhost:5000**
+Verify it is running: http://localhost:5000 should return `{ "message": "API is running..." }`
+
+#### Step 2 — Setup & Start the Frontend
+
+Open a **new terminal window**, then from the project root:
+
+```bash
+# Install frontend dependencies
+npm install
+
+# Start the Vite development server
+npm run dev
+```
+
+The frontend will start at **http://localhost:5173**
+
+#### Step 3 — Register & Login
+
+1. Go to **http://localhost:5173**
+2. Click **Register** and create a new account
+3. Login with your credentials to access the Kanban board
+
+#### Other Frontend Commands
+
+```bash
+npm run build      # Build production bundle
+npm run preview    # Preview production build locally
+```
+
+---
+
+### 🧪 Option C — Run Tests Only
+
+You do **not** need a running MongoDB instance to run the automated test suites.
+
+#### Frontend Tests (Vitest + React Testing Library)
+
+```bash
+# From the project root:
+npm test
+```
+
+Expected output: **28 tests passing** across 8 test suites.
+
+To run with coverage report:
+```bash
+npm run test:coverage
+```
+
+#### Backend Tests (Jest + Supertest)
+
+```bash
+# From the backend directory:
+cd backend
+npm test
+```
+
+Expected output: **107 tests passing** across auth, board, task, concurrency, and middleware suites.
+
+---
+
+### 🔬 Quick Reference — All Commands
+
+| Command | Directory | What it runs |
+|---|---|---|
+| `npm test` | Root | Frontend Vitest unit tests (28 tests) |
+| `npm run test:coverage` | Root | Frontend tests with coverage report |
+| `npm test` | `backend/` | Backend Jest + Supertest tests (107 tests) |
+| `docker compose up --build` | Root | Full stack with Docker (all services) |
+| `npm run build` | Root | Production frontend build |
 
 ---
 
@@ -300,23 +425,11 @@ Group_14_Fullstackdev-upload/
 
 ---
 
-# 8. Testing & Verification
-
-## M1 Testing
-* **Component Rendering**: Verified rendering of `Board`, `Column`, `TaskCard`, `Header`, `Footer`, `SidePanel`.
-* **Task Movement**: Verified task state transitions between *To Do*, *Doing*, and *Done* columns.
-* **Layout Responsiveness**: Tested Flexbox/Grid responsive behavior across mobile, tablet, and desktop views.
-
-## M2 Testing
-* **JWT Auth Testing**: Tested token storage, base64 payload decoding, and `exp` expiration validation.
-* **Route Protection**: Tested blocking unauthenticated visitors from accessing `/` or `/dashboard`.
-* **401/403 Interception**: Tested automatic session purge and alert banner display on 401/403 API responses.
-* **Role-Based Authorization**: Tested restriction of `/admin` route for standard members vs admin users.
-* **Member 6 Auth Testing Toolbar**: Built-in test toolbar on `/login` to simulate:
-  * 🟢 **Valid Member JWT**
-  * 🔵 **Valid Admin JWT**
-  * 🟡 **Test Expired JWT**
-  * 🔴 **Test Invalid JWT**
+## M3, M4 & M5 Testing
+* **Frontend Unit Tests (Vitest + React Testing Library)**: 8 test suites, **28 tests passing (100%)**.
+* **Backend Unit & Integration Tests (Jest + Supertest + Node Test)**: **107 total tests passing (100%)** across auth, board, task, concurrency, and authorization middleware.
+* **CI/CD Pipeline**: GitHub Actions workflow (`.github/workflows/ci.yml`) configured for strict automated test verification on every push.
+* **Docker Compose**: Orchestration verified for local multi-service execution (`docker-compose up --build`).
 * **Production Build Test**: Executed `npm run build` — **Built successfully with 0 errors**.
 
 ---
@@ -324,8 +437,8 @@ Group_14_Fullstackdev-upload/
 # 9. Git & GitHub Workflow
 
 * **Repository**: Central GitHub repository for Group 14 (`Group_14_Fullstackdev`).
-* **Branch Strategy**: Feature branch workflow where each member works on assigned feature branches before creating Pull Requests.
-* **Commit Conventions**: Descriptive commit messages referencing feature scope (`feat: add ProtectedRoute guard`, `fix: token expiration timestamp check`).
+* **Branch Strategy**: Feature branch workflow where each member works on assigned feature branches before creating Pull Requests into `main`.
+* **Commit Conventions**: Descriptive commit messages referencing feature scope (`feat: add ProtectedRoute guard`, `fix: test suite and CI pipeline setup`).
 * **Pull Requests & Reviews**: Peer review before merging feature branches into `main`.
 
 ---
@@ -338,42 +451,54 @@ Group_14_Fullstackdev-upload/
 | **Member 2** | Lochana | [`@rmlkloch`](https://github.com/rmlkloch) | TaskCard Component Designer<br>`feature/task-card-details-by-Lochana` | Backend API & Controllers<br>`feature/backend-api-by-Lochana` |
 | **Member 3** | Pooja | [`@psbasnayaka`](https://github.com/psbasnayaka) | State & Mock Data Architect<br>`feature/mock-data-and-state-by-Pooja` | Backend Auth & Security (Bcrypt/JWT)<br>`feature/backend-auth-by-pooja` |
 | **Member 4** | Bihansa | [`@Genzheta`](https://github.com/Genzheta) | Interactive Task Flows & Drag/Drop<br>`feature/task-drag-drop-by-bihansa` | Protected Frontend & Authorization<br>`feature/protected-frontend_by_bihansa` |
-| **Member 5** | Daham | [`@dahmmarkx-bravo1`](https://github.com/dahmmarkx-bravo1) | Header, Footer & Navigation<br>`feature/header-footer-navigation-by-Daham` | Frontend Auth (Login/Register Forms)<br>`feature/frontend-auth` |
+| **Member 5** | Daham | [`@dahmmarkx-bravo1`](https://github.com/dahmmarkx-bravo1) | Header, Footer & Navigation<br>`feature/header-footer-navigation-by-Daham` | Frontend Auth & Docker Compose<br>`feature/frontend-auth` |
 | **Member 6** | Nawoda | [`@DevOpsNNK`](https://github.com/DevOpsNNK) | Side Panel, History & Calendar<br>`feature/side-panel-history-calander-by-Nawoda` | Error Handling Middleware & Docs<br>`feature/error-handling-docs` |
 
 ---
 
-# 11. Milestone Progress
+# 11. Milestone Progress (Complete Summary)
 
-## M1 – Static Frontend
-* [x] Board completed
-* [x] Columns completed (*To Do*, *Doing*, *Done*)
-* [x] Task cards completed
-* [x] Mock data structure completed
-* [x] State management completed
-* [x] Task movement completed
-* [x] Header / Footer completed
-* [x] Side Panel completed
-* [x] History / Calendar components completed
+## M1 – Static Frontend (2 Aug)
+* [x] Scaffold React App with Vite
+* [x] Kanban Board Layout & Columns (*To Do*, *Doing*, *Done*)
+* [x] Reusable UI Components (TaskCard, Column, CreateTaskModal, Header, Footer, SidePanel)
+* [x] Interactive Task Movement Handlers & Drag/Drop
 
-## M2 – Working REST API & Backend
-* [x] Express server structure completed (`server.js`)
-* [x] Layered Architecture implemented (Controllers, Services, Repositories, Models)
-* [x] REST endpoints completed (`/api/auth`, `/api/tasks`)
-* [x] CRUD operations completed
-* [x] JWT Authentication completed
-* [x] Role Authorization completed (`hasRole`, RBAC)
-* [x] Protected frontend routes completed (`ProtectedRoute.jsx`)
-* [x] Request validation & rate limiting middleware completed
-* [x] Error handling & 401/403 interceptor completed
-* [x] Frontend / API integration service layer completed (`apiClient.js`, `api.js`)
-* [x] MongoDB / Mongoose connection with DNS fallback completed
-* [x] Testing & build verification completed (`npm run build` - 0 errors)
+## M2 – Working REST API & Backend (9 Aug)
+* [x] Layered Express Architecture (Controllers, Services, Repositories, Models)
+* [x] RESTful CRUD Endpoints (`/api/auth`, `/api/tasks`, `/api/boards`)
+* [x] JWT Authentication & Password Hashing with Bcrypt
+* [x] Protected Frontend Routes (`ProtectedRoute.jsx`) & RBAC Guards (`admin` vs `member`)
+
+## M3 – Persistence & Offline Support (16 Aug)
+* [x] MongoDB & Mongoose ODM Models (`User`, `Task`, `Board`, `Activity`)
+* [x] Multi-Strategy DB Connection Logic & Google DNS Fallback
+* [x] LocalStorage JWT Token Persistence & Client State Caching
+* [x] Offline Draft Detection — localStorage caches in-progress task edits
+* [x] Concurrent Edit Detection — Mongoose `__v` version key → `HTTP 409 Conflict`
+
+## M4 – Test Suite & CI Pipeline (23 Aug)
+* [x] Client Unit Tests (Vitest + RTL — 28 tests passing)
+* [x] Server Unit & Integration Tests (Jest + Supertest + Node test — 107 tests passing)
+* [x] GitHub Actions Automated CI Pipeline (`.github/workflows/ci.yml`)
+
+## M5 – Real-Time Sync, DevOps & Launch (30 Aug)
+* [x] Socket.io Real-Time Synchronization & JWT Handshake Auth
+* [x] Optimistic Concurrency Locking with Mongoose `__v` (`HTTP 409 Conflict`)
+* [x] Docker Containerization & Multi-Container Setup (`docker-compose.yml`)
+* [x] Nginx Frontend Web Server & Reverse Proxy Configuration
 
 ---
 
-# 12. Future Milestones
+# 12. Project Plans
 
-* 🗄️ **Milestone 3 — Database & Cloud Persistence**: Complete production deployment of MongoDB Atlas instance with replica set optimization.
-* ⚡ **Milestone 4 — Advanced Features & Real-Time Sync**: Implement Socket.io / WebSockets for live multi-user board updates and real-time drag-and-drop task movements.
-* 🚀 **Milestone 5 — Final Testing, Cloud Deployment & Docs**: End-to-end integration testing, Docker containerization, cloud deployment (Render / Vercel), and final project showcase documentation.
+For full details on our project planning, milestone task allocations per member, and a summary of all planned vs built features, see:
+
+📄 **[plans & group members.md](./plans%20%26%20group%20members.md)**
+
+This document contains:
+- Full group member list with GitHub handles
+- Pre-development plans for each milestone
+- Per-member task allocations and feature branches
+- Planned vs built feature comparison table
+
