@@ -2,7 +2,6 @@
 # Milestone 05 - Member 5: Docker Compose Orchestration
 # SyncBoard: MongoDB + Express/Socket.IO Backend + Nginx Frontend
 # ==========================================================
-version: '3.8'
 
 services:
   # --------------------------------------------------------
@@ -19,7 +18,7 @@ services:
     environment:
       - MONGO_INITDB_DATABASE=syncboard
     healthcheck:
-      test: ["CMD-SHELL", "mongosh --eval 'db.runCommand(\"ping\").ok' --quiet || exit 1"]
+      test: [ "CMD-SHELL", "mongosh --eval 'db.runCommand(\"ping\").ok' --quiet || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -35,10 +34,10 @@ services:
     container_name: syncboard-backend
     restart: always
     ports:
-      - "5000:5000"
+      - "5002:5002"
     environment:
       - NODE_ENV=production
-      - PORT=5000
+      - PORT=5002
       - MONGO_URI=mongodb://mongodb:27017/syncboard
       - MONGODB_URI=mongodb://mongodb:27017/syncboard
       - JWT_SECRET=syncboard_jwt_secret_key_production_m5
