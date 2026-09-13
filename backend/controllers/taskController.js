@@ -97,7 +97,6 @@ if (io) {
       }
       io.emit('task:created', createdTask);
     }
-    }
 
     return res.status(201).json(createdTask);
   } catch (error) {
@@ -141,7 +140,6 @@ if (io) {
       }
       io.emit('task:updated', updatedTask);
     }
-    }
 
     return res.status(200).json(updatedTask);
   } catch (error) {
@@ -183,7 +181,6 @@ if (io) {
         io.to(`board:${deletedTask.boardId}`).emit('task:deleted', deletedTask);
       }
       io.emit('task:deleted', deletedTask);
-    }
     }
 
     return res.status(200).json({ message: 'Task removed' });
