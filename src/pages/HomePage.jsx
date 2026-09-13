@@ -3,6 +3,7 @@ import Column from '../components/Column';
 import CreateTaskModal from '../components/CreateTaskModal';
 import SidePanel from '../components/SidePanel';
 import useTasks from '../hooks/useTasks';
+import useBoardSocket from '../hooks/useBoardSocket';
 
 const COLUMNS = ['To do', 'Doing', 'Done'];
 
@@ -12,6 +13,7 @@ export default function HomePage({ onLogout, activePage, onNavigate }) {
     loading,
     error,
     conflictError,
+    isSocketConnected,
     fetchTasks,
     addTask,
     removeTask,
@@ -19,6 +21,9 @@ export default function HomePage({ onLogout, activePage, onNavigate }) {
     changeTaskMember,
     clearConflictError
   } = useTasks();
+
+  // M5: Board room join and reconnection synchronization
+  useBoardSocket(null, 'default', fetchTasks);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -116,6 +121,35 @@ export default function HomePage({ onLogout, activePage, onNavigate }) {
         <div className="navbar-left">
           <div className="navbar-logo">K</div>
           <h1 className="navbar-title">Kanban Flow</h1>
+          <div
+            id="realtime-status-badge"
+            title={isSocketConnected ? 'Real-time multi-user sync active' : 'Connecting to real-time server...'}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 10px',
+              marginLeft: '12px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: '500',
+              backgroundColor: isSocketConnected ? 'rgba(34, 197, 94, 0.12)' : 'rgba(234, 179, 8, 0.12)',
+              color: isSocketConnected ? '#22c55e' : '#eab308',
+              border: `1px solid ${isSocketConnected ? 'rgba(34, 197, 94, 0.3)' : 'rgba(234, 179, 8, 0.3)'}`,
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <span
+              style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                backgroundColor: isSocketConnected ? '#22c55e' : '#eab308',
+                boxShadow: isSocketConnected ? '0 0 6px #22c55e' : 'none'
+              }}
+            />
+            {isSocketConnected ? 'Live Sync' : 'Reconnecting...'}
+          </div>
         </div>
 
         <div className="navbar-actions">

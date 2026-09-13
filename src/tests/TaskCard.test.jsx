@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import TaskCard from '../TaskCard';
+import TaskCard from '../components/TaskCard';
 
 describe('Member 3 - TaskCard Component Tests', () => {
   const mockTask = {
@@ -17,7 +17,7 @@ describe('Member 3 - TaskCard Component Tests', () => {
   });
 
   it('triggers edit callback when clicked', async () => {
-    const onEditMock = jest.fn();
+    const onEditMock = typeof vi !== 'undefined' ? vi.fn() : jest.fn();
     render(<TaskCard task={mockTask} onEdit={onEditMock} />);
 
     const card = screen.getByText('Complete M4 Unit Tests');

@@ -1,30 +1,71 @@
 // src/hooks/useBoardSocket.js
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { getSocket } from '../services/socket';
 
-export const useBoardSocket = (socket, boardId, refetchBoardData) => {
+export const useBoardSocket = (socketInstance, boardId = 'default', refetchBoardData) => {
+  const [isConnected, setIsConnected] = useState(false);
+  const [activeUsers, setActiveUsers] = useState([]);
+
   useEffect(() => {
-    if (!socket || !boardId) return;
+    const socket = socketInstance || getSocket();
+    if (!socket) return;
 
-    // Join room when component mounts or board changes
-    socket.emit('join:board', boardId);
-
-    // Handle Socket.IO automatic reconnection
-    const handleReconnect = () => {
-      console.log('Socket reconnected! Rejoining room and refetching state...');
-      socket.emit('join:board', boardId);
-      
-      // Refetch state because Socket.IO doesn't replay missed events automatically
+    const handleConnect = () => {
+      setIsConnected(true);
+      if (boardId) {
+        socket.emit('join:board', boardId);
+      }
       if (refetchBoardData) {
         refetchBoardData();
       }
     };
 
-    socket.on('connect', handleReconnect);
-
-    // Cleanup listeners when unmounting or changing boards to avoid duplicate listeners
-    return () => {
-      socket.emit('leave:board', boardId);
-      socket.off('connect', handleReconnect);
+    const handleDisconnect = () => {
+      setIsConnected(false);
     };
-  }, [socket, boardId, refetchBoardData]);
+
+    const handlePresence = (presence) => {
+      if (presence?.userId) {
+        setActiveUsers((prev) => {
+          if (!prev.includes(presence.userId)) {
+            return [...prev, presence.userId];
+          }
+          return prev;
+        });
+      }
+    };
+
+    const handleSyncComplete = () => {
+      if (refetchBoardData) {
+        refetchBoardData();
+      }
+    };
+
+    // Set initial connection status
+    setIsConnected(Boolean(socket.connected));
+
+    // Join room if already connected
+    if (socket.connected && boardId) {
+      socket.emit('join:board', boardId);
+    }
+
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    socket.on('presence:update', handlePresence);
+    socket.on('sync:complete', handleSyncComplete);
+
+    return () => {
+      if (boardId) {
+        socket.emit('leave:board', boardId);
+      }
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      socket.off('presence:update', handlePresence);
+      socket.off('sync:complete', handleSyncComplete);
+    };
+  }, [socketInstance, boardId, refetchBoardData]);
+
+  return { isConnected, activeUsers };
 };
+
+export default useBoardSocket;

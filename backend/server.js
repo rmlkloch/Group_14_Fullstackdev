@@ -61,12 +61,17 @@ io.use((socket, next) => {
 
 // 4. Implement main connection handling and event structure
 io.on('connection', (socket) => {
-  console.log(`🟢 Real-time connection established: User ID ${socket.user.id}`);
+  console.log(`🟢 Real-time connection established: User ID ${socket.user?.id || socket.id}`);
 
-  // Member 2 & 3 will add specific event listeners (task:created, rooms) here later
+  // Register room and sync handlers
+  try {
+    require('./sockets/roomHandler')(io, socket);
+  } catch (err) {
+    console.warn('Socket roomHandler registration warning:', err.message);
+  }
 
   socket.on('disconnect', () => {
-    console.log(`🔴 User disconnected: ${socket.user.id}`);
+    console.log(`🔴 User disconnected: ${socket.user?.id || socket.id}`);
   });
 });
 
